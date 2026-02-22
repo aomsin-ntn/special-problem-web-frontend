@@ -5,7 +5,7 @@
     export let keywords: string[] = [];
 </script>
 
-<div class="w-full max-w-60 h-80 bg-white rounded-xl border border-gray-200 shadow-md px-5 py-4 flex flex-col gap-4 
+<div class="w-full max-w-58 h-80 bg-white rounded-xl border border-gray-200 shadow-md px-5 py-4 flex flex-col gap-4 
             hover:scale-105 transition-transform duration-300 cursor-pointer">
     <div class="pb-3 border-b border-gray-500">
         <h5 class="text-black">

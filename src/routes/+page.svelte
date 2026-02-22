@@ -3,7 +3,6 @@
 	import SearchBar from '../components/SearchBar.svelte';
 	import CardPopular from '../components/CardPopular.svelte';
 	import MenuCategory from '../components/MenuCategory.svelte';
-	import Button from '../components/Button.svelte';
 
 	let searchTerm: string = "";
 	let cardsPopular = [
@@ -39,6 +38,21 @@
 		}
 	];
 
+	let menuCategories = [
+		{ label: "คณะวิศวกรรมศาสตร์", destination: "/faculty/engineering" },
+		{ label: "คณะวิทยาศาสตร์", destination: "/faculty/science" },
+		{ label: "คณะสถาปัตยกรรมศาสตร์", destination: "/faculty/architecture" },
+		{ label: "คณะครุศาสตร์อุตสาหกรรมและเทคโนโลยี", destination: "/faculty/industrial-education" },
+		{ label: "คณะเทคโนโลยีสารสนเทศ", destination: "/faculty/information-technology" },
+		{ label: "คณะเทคโนโลยีการเกษตร", destination: "/faculty/agricultural-technology" },
+		{ label: "คณะอุตสาหกรรมอาหาร", destination: "/faculty/food-industry" },
+		{ label: "คณะบริหารธุรกิจ", destination: "/faculty/business" },
+		{ label: "คณะศิลปศาสตร์", destination: "/faculty/liberal-arts" },
+		{ label: "คณะแพทยศาสตร์", destination: "/faculty/medicine" },
+		{ label: "คณะทันตแพทยศาสตร์", destination: "/faculty/dentistry" },
+		{ label: "คณะพยาบาลศาสตร์", destination: "/faculty/Nursing" }
+	];
+
 
 	// ฟังก์ชันรองรับการค้นหา
 	async function handleSearch(event: CustomEvent<string>): Promise<void> {
@@ -65,9 +79,9 @@
 		<SearchBar bind:value={searchTerm} on:search={handleSearch} />
 	</div>
 	
-	<div class="w-full bg-white gap-10 px-4 sm:px-6 md:px-10 lg:px-16 py-10 flex flex-col">
+	<div class="w-full bg-white gap-10 sm:px-10 md:px-20 lg:px-30 py-10 flex flex-col">
 		<h3 class="text-black">ปัญหาพิเศษที่กำลังเป็นที่สนใจ</h3>
-		<div class="flex flex-wrap gap-4 justify-between">
+		<div class="flex flex-wrap justify-between">
 			{#each cardsPopular.slice(0, 5) as cardPop}
 				<CardPopular 
 					category={cardPop.category}
@@ -79,18 +93,14 @@
 		</div>
 	</div>
 
-	<div class="w-full bg-orange-700 gap-10 px-4 sm:px-6 md:px-10 lg:px-16 py-10 flex flex-col">
+	<div class="w-full bg-orange-700 gap-10 sm:px-10 md:px-20 lg:px-30 py-10 flex flex-col">
 		<h3 class="text-white">ค้นหาโดยคณะ</h3>
 		<div class="flex flex-wrap justify-between">
-			<MenuCategory label="คณะวิศวกรรมศาสตร์" destination="/faculty/engineering" />
-			<MenuCategory label="คณะวิทยาศาสตร์" destination="/faculty/science" />
-			<MenuCategory label="คณะสถาปัตยกรรมศาสตร์" destination="/faculty/architecture" />
-			<MenuCategory label="คณะครุศาสตร์อุตสาหกรรมและเทคโนโลยี" destination="/faculty/industrial-education" />
-			<MenuCategory label="คณะเทคโนโลยีสารสนเทศและการสื่อสาร" destination="/faculty/information-technology" />
-			<MenuCategory label="คณะเทคโนโลยีการเกษตร" destination="/faculty/agricultural-technology" />
-			<MenuCategory label="คณะเทคโนโลยีสิ่งทอและการออกแบบแฟชั่น" destination="/faculty/textile-and-fashion-design-technology" />
-			<MenuCategory label="คณะเทคโนโลยีการจัดการอุตสาหกรรม" destination="/faculty/industrial-management-technology" />
-			<MenuCategory label="คณะเทคโนโลยีการพิมพ์และบรรจุภัณฑ์" destination="/faculty/printing-and-packaging-technology" />
+			{#each menuCategories as menuCategory}
+				<MenuCategory 
+					label={menuCategory.label} 
+					destination={menuCategory.destination} />
+        	{/each}
 		</div>
 	</div>
 

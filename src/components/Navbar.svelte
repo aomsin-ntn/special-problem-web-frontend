@@ -1,9 +1,10 @@
 <script lang="ts">
     import kmitlLogo from '$lib/assets/Kmitl-logo-navbar.png';
+    import { Menu, X } from 'lucide-svelte';
     import { goto } from '$app/navigation';
     import { slide } from 'svelte/transition';
     
-    let isMobileMenuOpen = false;
+let isMobileMenuOpen: boolean = false;
     
 	async function handleNavigate(href: string) {
 		await goto(href);
@@ -54,17 +55,11 @@
         class="md:hidden cursor-pointer p-2 rounded-lg hover:bg-orange-300 transition"
         aria-label="Toggle menu"
     >
-        <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="white"
-            viewBox="0 0 24 24">
-            <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d={isMobileMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}/>
-        </svg>
+        {#if isMobileMenuOpen}
+            <X size={24} color="white" strokeWidth={2} />
+        {:else}
+            <Menu size={24} color="white" strokeWidth={2} />
+        {/if}
 </button>
 </nav>
 

@@ -14,9 +14,9 @@
             active:scale-95">
             
     <a 
-    href={destination}
-    on:click={handleClick}
-    class="">
+        href={destination}
+        on:click={handleClick}
+        class="">
         <p> {label} </p>
     </a>
 </div>
