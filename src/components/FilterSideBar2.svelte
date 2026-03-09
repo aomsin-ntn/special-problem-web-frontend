@@ -50,7 +50,7 @@
     };
 </script>
 
-<aside class="w-full bg-white sticky top-5 h-fit max-h-[calc(100vh-40px)] overflow-y-auto">
+<aside class="w-full bg-white h-screen overflow-y-auto ">
     <section class="container">
         <div class="flex justify-between items-center mb-4">
             <p class="text-black text-base md:text-lg lg:text-x font-medium">
@@ -89,7 +89,7 @@
 
         <section class="mb-8">
             <button onclick={() => isFacultyOpen = !isFacultyOpen} class="flex justify-between w-full text-black text-base md:text-lg lg:text-x font-medium mb-4 cursor-pointer">
-                คณะ 
+                คณะ - สาขา 
                 <span>
                     {#if isFacultyOpen}
                         <ChevronUp />

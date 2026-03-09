@@ -1,7 +1,6 @@
 <script lang="ts">
     import { ChevronUp, ChevronDown } from 'lucide-svelte';
 
-    // กำหนด Interface สำหรับหมวดหมู่
     interface FilterOption {
         id: string;
         label: string;
@@ -11,10 +10,9 @@
         title: string;
         isOpen: boolean;
         options: FilterOption[];
-        selected: string[]; // เก็บ id ที่ถูกเลือก
+        selected: string[]; 
     }
 
-    // ข้อมูลสำหรับ Filter
     let categories = $state<FilterCategory[]>([
         {
         title: "ปีการศึกษา",
@@ -30,7 +28,7 @@
         {
         title: "คณะ",
         isOpen: true,
-        selected: ["science"], // ตัวอย่างเลือก "วิทยาศาสตร์" ไว้
+        selected: ["science"], 
         options: [
             { id: "science", label: "วิทยาศาสตร์" },
             { id: "eng", label: "วิศวกรรมศาสตร์" },
@@ -51,18 +49,16 @@
         }
     ]);
 
-    // ฟังก์ชันสำหรับ Reset ทั้งหมด
     const resetFilters = () => {
         categories.forEach(cat => cat.selected = []);
     };
 
-    // ฟังก์ชันสำหรับ Toggle เปิด-ปิด หมวดหมู่
     const toggleCategory = (index: number) => {
         categories[index].isOpen = !categories[index].isOpen;
     };
 </script>
 
-<aside class="w-full max-w-[320px] bg-white p-4 border-r border-gray-200 h-screen overflow-y-auto">
+<aside class="w-full max-w-[320px] bg-white p-4 h-screen overflow-y-auto">
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-medium text-gray-800">Filter</h2>
         <button 
