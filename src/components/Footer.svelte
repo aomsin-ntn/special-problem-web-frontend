@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { ComponentType } from 'svelte';
-    import { Facebook, Mail , MapPin} from 'lucide-svelte';
+    import { Facebook, Mail } from 'lucide-svelte';
 
     interface ContactInfo {
         label: string;
@@ -30,25 +30,36 @@
     const address: string = "1 Chalong Krung 1 Alley, Lat Krabang, Bangkok 10520, Thailand";
 </script>
 
-<footer class="bg-gray-300 text-white py-10 sm:px-6 md:px-20 lg:px-30">
-    <div class="max-w-7xl mx-auto flex flex-row justify-between items-center gap-8">
+<footer class="bg-gray-300 text-white py-8 px-6 md:px-20 lg:px-30">
+    <div class="w-full mx-auto flex flex-row justify-between items-center gap-8">
         
         <div class="flex flex-col gap-2">
-            <h5>{universityNameTh}</h5>
-            <h5>{universityNameEn}</h5>
+            <p class="text-sm md:text-sm lg:text-sm font-light">
+                {universityNameTh}
+            </p>
+            <p class="text-sm md:text-sm lg:text-sm font-light">
+                {universityNameEn}
+            </p>
         </div>
 
         <div class="flex flex-col gap-2 max-w-75">
-            <p>Contact us</p>
-            {#each contactDetails as contact}
-            <div class="flex gap-2">
-                <svelte:component this={contact.icon} size={20} strokeWidth={2} />
-                <a href={contact.link} class="hover:underline transition-all">
-                    <h5>{contact.value}</h5>
-                </a>
-            </div>
+            <p class="text-sm md:text-base lg:text-base font-medium">
+                Contact us
+            </p>
+            {#each contactDetails as contact (contact.label)}
+                {@const Icon = contact.icon}
+                <div class="flex gap-2">
+                    <Icon size={20} strokeWidth={2} />
+                    <a href={contact.link} class="hover:underline transition-all">
+                        <p class="text-sm md:text-sm lg:text-sm font-light">
+                            {contact.value}
+                        </p>
+                    </a>
+                </div>
             {/each}
-            <h5>{address}</h5>
+            <p class="text-sm md:text-sm lg:text-sm font-light">
+                {address}
+            </p>
         </div>
     </div>
 </footer>

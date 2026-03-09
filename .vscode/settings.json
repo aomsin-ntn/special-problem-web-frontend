@@ -1,5 +1,15 @@
 {
 	"files.associations": {
 		"*.css": "tailwindcss"
+	},
+	"chat.mcp.serverSampling": {
+		"special-problem-web-frontend/.vscode/mcp.json: svelte": {
+			"allowedModels": [
+				"copilot/auto",
+				"copilotcli/claude-sonnet-4.6",
+				"claude-code/claude-sonnet-4.6",
+				"copilot/claude-haiku-4.5"
+			]
+		}
 	}
 }

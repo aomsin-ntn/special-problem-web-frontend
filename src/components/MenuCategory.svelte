@@ -1,11 +1,10 @@
 <script lang="ts">
-    export let label: string = "คณะ";
-    export let destination: string = "/faculty";
+    interface Props {
+        label?: string;
+        destination?: string;
+    }
 
-    const handleClick = (event: MouseEvent): void => {
-        console.log(`Navigating to ${destination}`);
-    };
-
+    let { label = "คณะ", destination = "/faculty" }: Props = $props();
 </script>
 
 <div class="w-100 hover:bg-orange-500 py-5 border-t
@@ -13,10 +12,9 @@
             cursor-pointer transition-all duration-300 ease-in-out
             active:scale-95">
             
-    <a 
-        href={destination}
-        on:click={handleClick}
-        class="">
-        <p> {label} </p>
+    <a href={destination} class="">
+        <p class="text-sm md:text-base lg:text-base font-medium"> 
+            {label}
+        </p>
     </a>
 </div>

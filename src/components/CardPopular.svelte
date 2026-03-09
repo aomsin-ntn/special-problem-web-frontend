@@ -1,34 +1,46 @@
 <script lang="ts">
-    export let category: string = "ปัญหาพิเศษ";
-    export let titleThai: string = "ชื่อโปรเจคภาษาไทย";
-    export let titleEnglish: string = "ชื่อโปรเจคภาษาอังกฤษ";
-    export let keywords: string[] = [];
+    interface Props {
+        category?: string;
+        titleThai?: string;
+        titleEnglish?: string;
+        keywords?: string[];
+    }
+
+    let {
+        category = "ปัญหาพิเศษ",
+        titleThai = "ชื่อโปรเจคภาษาไทย",
+        titleEnglish = "ชื่อโปรเจคภาษาอังกฤษ",
+        keywords = []
+    }: Props = $props();
+    
 </script>
 
 <div class="w-full max-w-58 h-80 bg-white rounded-xl border border-gray-200 shadow-md px-5 py-4 flex flex-col gap-4 
             hover:scale-105 transition-transform duration-300 cursor-pointer">
-    <div class="pb-3 border-b border-gray-500">
-        <h5 class="text-black">
+    <div>
+        <p class="text-black text-sm md:text-sm lg:text-sm font-light">
             {category}
-        </h5>
+        </p>
     </div>
 
+    <hr class="border-gray-500"/>
+
     <div class="w-full flex flex-col gap-2">
-        <p class="text-black line-clamp-2 text-ellipsis">
+        <p class="text-black line-clamp-2 text-ellipsis text-sm md:text-base lg:text-base font-medium">
             {titleThai}
         </p>
-        <p class="text-black line-clamp-2 text-ellipsis">
+        <p class="text-black line-clamp-2 text-ellipsis text-sm md:text-base lg:text-base font-medium">
             {titleEnglish}
         </p>
     </div>
 
-    <hr class="border-gray-500" />
+    <hr class="border-gray-500"/>
 
     <div class="flex flex-col gap-2">
-        {#each keywords.slice(0, 3) as keyword}
-            <h5 class="text-gray-800 truncate">
+        {#each keywords.slice(0, 3) as keyword, index (index)}
+            <p class="text-gray-800 truncate text-sm md:text-sm lg:text-sm font-light">
                 {keyword}
-            </h5>
+            </p>
         {/each}
     </div>
 
