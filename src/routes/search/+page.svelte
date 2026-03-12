@@ -1,7 +1,8 @@
 <script lang="ts">
     import { onMount } from 'svelte';
-    import SearchBar from "../../components/SearchBar.svelte";
-    import FilterSideBar from "../../components/FilterSideBar.svelte";
+    import SearchBar from "$lib/components/SearchBar.svelte";
+    import FilterSideBar from "$lib/components/FilterSideBar.svelte";
+    import CardProjectDetail from '$lib/components/CardProjectDetail.svelte';
     import { page } from '$app/state';
 
     interface Option {
@@ -13,7 +14,88 @@
         majors: Option[];
     }
 
+    interface SortOption {
+        label: string;
+        value: string;
+    }
+
     const searchTerm = $derived(page.url.searchParams.get('q') ?? '');
+    
+    // Sorting state
+    let sortBy = $state<string>('newest');
+    let isDropdownOpen = $state<boolean>(false);
+    let currentPage = $state<number>(1);
+    const itemsPerPage = 4;
+
+    const sortOptions: SortOption[] = [
+        { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'newest' },
+        { label: 'เรียงตามอัปโหลดเก่า > ใหม่', value: 'oldest' },
+        { label: 'เรียงตามดาวน์โหลดมากที่สุด', value: 'most-downloads' },
+        { label: 'เรียงตามดาวน์โหลดน้อยที่สุด', value: 'least-downloads' },
+    ];
+
+    const mockProjects = [
+        {
+            faculty: "คณะวิทยาศาสตร์",
+            major: "สาขาวิทยาการคอมพิวเตอร์",
+            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
+            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
+            semester: "ปีการศึกษา 2567",
+            titleThai: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง1",
+            titleEnglish: "Development of a Book Recommendation System Using Machine Learning Techniques",
+            keywords: ["ระบบแนะนำหนังสือ", "การเรียนรู้ของเครื่อง", "การประมวลผลภาษาธรรมชาติ"],
+            uploadDate: new Date('2024-01-15'),
+            downloads: 150
+        },
+        {
+            faculty: "คณะบริหารธุรกิจ",
+            major: "สาขาการตลาด",
+            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
+            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
+            semester: "ปีการศึกษา 2568",
+            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย1",
+            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
+            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            uploadDate: new Date('2024-02-20'),
+            downloads: 200
+        },
+        {
+            faculty: "คณะวิศวกรรมศาสตร์",
+            major: "สาขาคอมพิวเตอร์",
+            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
+            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
+            semester: "ปีการศึกษา 2569",
+            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย2",
+            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
+            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            uploadDate: new Date('2024-03-10'),
+            downloads: 120
+        },
+        {
+            faculty: "คณะวิทยาศาสตร์",
+            major: "สาขาวิทยาการคอมพิวเตอร์",
+            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
+            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
+            semester: "ปีการศึกษา 2567",
+            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย3",
+            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
+            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            uploadDate: new Date('2024-01-05'),
+            downloads: 300
+        },
+        {
+            faculty: "คณะวิทยาศาสตร์",
+            major: "สาขาวิทยาการคอมพิวเตอร์",
+            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
+            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
+            semester: "ปีการศึกษา 2567",
+            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย4",
+            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
+            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            uploadDate: new Date('2024-02-14'),
+            downloads: 85
+        },
+    ];
 
     const mockFaculties: Faculty[] = [
         {
@@ -61,6 +143,52 @@
 
     let faculties = $state<Faculty[]>([]);
 
+    // Sort projects based on the selected sort option
+    const sortedProjects = $derived.by(() => {
+        const sorted = [...mockProjects];
+        switch (sortBy) {
+            case 'newest':
+                return sorted.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+            case 'oldest':
+                return sorted.sort((a, b) => new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime());
+            case 'most-downloads':
+                return sorted.sort((a, b) => b.downloads - a.downloads);
+            case 'least-downloads':
+                return sorted.sort((a, b) => a.downloads - b.downloads);
+            default:
+                return sorted;
+        }
+    });
+
+    // Calculate pagination
+    const totalPages = $derived(Math.ceil(sortedProjects.length / itemsPerPage));
+    const paginatedProjects = $derived(sortedProjects.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    ));
+
+    // Get selected sort label
+    const selectedSortLabel = $derived(sortOptions.find(opt => opt.value === sortBy)?.label || sortBy);
+
+    // Toggle dropdown
+    function toggleDropdown() {
+        isDropdownOpen = !isDropdownOpen;
+    }
+
+    // Handle sort selection
+    function handleSort(value: string) {
+        sortBy = value;
+        isDropdownOpen = false;
+        currentPage = 1; // Reset to first page when sorting changes
+    }
+
+    // Handle page change
+    function goToPage(pageNum: number) {
+        if (pageNum >= 1 && pageNum <= totalPages) {
+            currentPage = pageNum;
+        }
+    }
+
     onMount(async () => {
         try {
             const response = await fetch('http://localhost:8000/api/filters/faculties');
@@ -96,152 +224,107 @@
                 </div>
 
                 <div class="w-4/5 flex flex-col gap-4 pl-4">
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
+                    <!-- Search Results Count and Sort Filter -->
+                    <div class="flex justify-between items-center pb-2 pt-1 px-2">
+                        <div>
+                            <p class="text-black text-sm md:text-base">
+                                ผลลัพธ์การค้นหา (<span class="font-semibold text-orange-500">{sortedProjects.length}</span> รายการ)
+                            </p>
+                        </div>
                         
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
+                        <!-- Sorting Dropdown -->
+                        <div class="relative">
+                            <button 
+                                onclick={toggleDropdown}
+                                class="flex items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                            >
+                                <span class="text-sm md:text-base text-black">{selectedSortLabel}</span>
+                                <svg 
+                                    class="w-4 h-4 transition transform {isDropdownOpen ? 'rotate-180' : ''}" 
+                                    fill="none" 
+                                    stroke="black" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                </svg>
+                            </button>
+                            
+                            {#if isDropdownOpen}
+                                <div class="absolute right-0 mt-2 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-lg z-10">
+                                    {#each sortOptions as option (option.value)}
+                                        <button 
+                                            onclick={() => handleSort(option.value)}
+                                            class="w-full text-left px-4 py-3 hover:bg-orange-200 transition {sortBy === option.value ? 'bg-orange-700 font-semibold text-orange-800' : 'text-gray-700'}"
+                                        >
+                                            {option.label}
+                                        </button>
+                                    {/each}
+                                </div>
+                            {/if}
+                        </div>
                     </div>
 
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
+                    <!-- Project Cards -->
+                    <div class="flex flex-col gap-4">
+                        {#each paginatedProjects as project (project.titleThai)}
+                            <CardProjectDetail 
+                                faculty={project.faculty}
+                                major={project.major}
+                                author={project.author}
+                                advisor={project.advisor}
+                                semester={project.semester}
+                                titleThai={project.titleThai}
+                                titleEnglish={project.titleEnglish}
+                                keywords={project.keywords}
+                            />
+                        {/each}
                     </div>
 
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
+                    <!-- Pagination -->
+                    {#if totalPages > 1}
+                        <div class="flex justify-center items-center gap-2 py-6">
+                            <!-- Previous Button -->
+                            <button 
+                                onclick={() => goToPage(currentPage - 1)}
+                                disabled={currentPage === 1}
+                                class="p-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                title="หน้าก่อนหน้า"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="black" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                </svg>
+                            </button>
 
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
+                            <!-- Page Numbers -->
+                            {#each Array.from({ length: totalPages }, (_, i) => i + 1) as pageNum (pageNum)}
+                                <button 
+                                    onclick={() => goToPage(pageNum)}
+                                    class="w-10 h-10 rounded-lg border-2 transition {currentPage === pageNum 
+                                        ? 'bg-orange-500 text-white border-orange-500' 
+                                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
+                                >
+                                    {pageNum}
+                                </button>
+                            {/each}
 
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
-
-                    <div class="flex-1 bg-gray-100 rounded-lg">
-                        <p class="text-gray-800 text-xl md:text-2xl lg:text-3xl font-semibold mb-4">
-                            ผลการค้นหา
-                        </p>
-                        
-                        <p class="text-black text-sm md:text-base lg:text-base font-medium">
-                            แสดงผลการค้นหาสำหรับ: 
-                            <span class="font-medium text-gray-900">
-                                {searchTerm}
-                            </span>
-                        </p>
-                    </div>
+                            <!-- Next Button -->
+                            <button 
+                                onclick={() => goToPage(currentPage + 1)}
+                                disabled={currentPage === totalPages}
+                                class="p-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                title="หน้าถัดไป"
+                            >
+                                <svg class="w-5 h-5" fill="none" stroke="black" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        </div>
+                    {/if}
 
                 </div>
+
             </div>
+
         </section>
         
     </section>

@@ -7,6 +7,7 @@
 
 @theme {
 
+    --color-orange-100: #E35205;
     --color-orange-500: #FF8D00;
     --color-orange-700: #FF9D24;
     --color-white: #fff;    
@@ -18,6 +19,20 @@
     --color-gray-600: #E6E6E6;
 
     --font-Prompt: "Prompt", sans-serif; 
+
+}
+
+@plugin "daisyui/theme" {
+
+    --color-orange-500: #FF8D00;
+    --color-orange-700: #FF9D24;
+    --color-white: #fff;    
+    --color-black: #000;
+    --color-gray-200: #333;
+    --color-gray-300: #666;
+    --color-gray-400: #999;
+    --color-gray-500: #CCC;
+    --color-gray-600: #E6E6E6;
 
 }
 

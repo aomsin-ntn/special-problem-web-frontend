@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '../../components/api.svelte';
+	import Button from '$lib/components/api.svelte';
 </script>
 
 <div class="flex flex-col items-center justify-center min-h-screen bg-gray-100">

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import kmitlLogo from '$lib/assets/Kmitl-logo-navbar.png';
-	import SearchBar from '../components/SearchBar.svelte';
-	import CardPopular from '../components/CardPopular.svelte';
-	import MenuCategory from '../components/MenuCategory.svelte';
+	import SearchBar from '$lib/components/SearchBar.svelte';
+	import CardPopular from '$lib/components/CardProjectPopular.svelte';
+	import MenuCategory from '$lib/components/MenuCategory.svelte';
 
 	const cardsPopular = [
 		{

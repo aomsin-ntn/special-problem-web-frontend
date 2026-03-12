@@ -70,7 +70,7 @@
         <h2 class="text-black text-base md:text-lg lg:text-xl font-bold">ตัวกรอง</h2>
         <button 
             onclick={resetAll}
-            class="flex items-center gap-1 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors border border-orange-500 rounded px-2 py-1 hover:bg-orange-50"
+            class="flex items-center gap-1 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors border border-orange-500 rounded px-2 py-1 hover:bg-orange-50 cursor-pointer"
         >
             <RotateCcw size={14} /> ล้างทั้งหมด
         </button>
@@ -78,7 +78,7 @@
 
     <div class="space-y-4">
         <div class="filter-group">
-            <button onclick={() => toggleSection('year')} class="section-trigger">
+            <button onclick={() => toggleSection('year')} class="section-trigger cursor-pointer">
                 <span>ปีการศึกษา</span>
                 {@render toggleIcon(openSections.year)}
             </button>
@@ -95,7 +95,7 @@
         <hr class="border-gray-600" />
 
         <div class="filter-group">
-            <button onclick={() => toggleSection('facultyMajor')} class="section-trigger">
+            <button onclick={() => toggleSection('facultyMajor')} class="section-trigger cursor-pointer">
                 <span>คณะ - สาขาวิชา</span>
                 {@render toggleIcon(openSections.facultyMajor)}
             </button>

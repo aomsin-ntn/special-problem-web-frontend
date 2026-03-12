@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
-	import Navbar from '../components/Navbar.svelte';
-	import Footer from '../components/Footer.svelte';
+	import Navbar from '$lib/components/Navbar.svelte';
+	import Footer from '$lib/components/Footer.svelte';
 	import KmitlLogo from '$lib/assets/Kmitl-logo-navbar.png';
 
 	let { children } = $props();
