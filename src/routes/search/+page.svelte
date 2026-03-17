@@ -25,7 +25,9 @@
     let sortBy = $state<string>('newest');
     let isDropdownOpen = $state<boolean>(false);
     let currentPage = $state<number>(1);
-    const itemsPerPage = 4;
+    const itemsPerPage = 10;
+    let selectedYears = $state<string[]>([]);
+    let selectedMajors = $state<string[]>([]);
 
     const sortOptions: SortOption[] = [
         { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'newest' },
@@ -36,62 +38,67 @@
 
     const mockProjects = [
         {
+            id: '1',
             faculty: "คณะวิทยาศาสตร์",
             major: "สาขาวิทยาการคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2567",
-            titleThai: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง1",
+            titleThai: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง",
             titleEnglish: "Development of a Book Recommendation System Using Machine Learning Techniques",
             keywords: ["ระบบแนะนำหนังสือ", "การเรียนรู้ของเครื่อง", "การประมวลผลภาษาธรรมชาติ"],
             uploadDate: new Date('2024-01-15'),
             downloads: 150
         },
         {
+            id: '2',
             faculty: "คณะบริหารธุรกิจ",
             major: "สาขาการตลาด",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2568",
-            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย1",
+            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย",
             titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
             keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
             uploadDate: new Date('2024-02-20'),
             downloads: 200
         },
         {
+            id: '3',
             faculty: "คณะวิศวกรรมศาสตร์",
-            major: "สาขาคอมพิวเตอร์",
+            major: "สาขาวิศวกรรมคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2569",
-            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย2",
-            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
-            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            titleThai: "ระบบตรวจจับความผิดปกติโดยใช้การเรียนรู้เชิงลึก",
+            titleEnglish: "Anomaly Detection System Using Deep Learning",
+            keywords: ["การตรวจจับความผิดปกติ", "เรียนรู้เชิงลึก", "โครงข่ายประสาทเทียม"],
             uploadDate: new Date('2024-03-10'),
             downloads: 120
         },
         {
+            id: '4',
             faculty: "คณะวิทยาศาสตร์",
             major: "สาขาวิทยาการคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2567",
-            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย3",
-            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
-            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            titleThai: "การพยากรณ์ราคาหุ้นด้วยเครือข่ายประสาทเทียม",
+            titleEnglish: "Stock Price Prediction Using Neural Networks",
+            keywords: ["พยากรณ์ราคา", "เครือข่ายประสาทเทียม", "ตลาดหุ้น"],
             uploadDate: new Date('2024-01-05'),
             downloads: 300
         },
         {
+            id: '5',
             faculty: "คณะวิทยาศาสตร์",
             major: "สาขาวิทยาการคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2567",
-            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย4",
-            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
-            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
+            titleThai: "ระบบจดจำรูปภาพใบหน้าขั้นสูง",
+            titleEnglish: "Advanced Facial Recognition System",
+            keywords: ["จดจำใบหน้า", "การประมวลผลภาพ", "การรักษาความปลอดภัย"],
             uploadDate: new Date('2024-02-14'),
             downloads: 85
         },
@@ -143,9 +150,30 @@
 
     let faculties = $state<Faculty[]>([]);
 
-    // Sort projects based on the selected sort option
+    // Helper function to match project major with selected majors
+    function matches(project: typeof mockProjects[0]): boolean {
+        // Filter by year
+        if (selectedYears.length > 0) {
+            const projectYear = project.semester.match(/\d+/)?.[0];
+            if (!projectYear || !selectedYears.includes(projectYear)) return false;
+        }
+
+        // Filter by major
+        if (selectedMajors.length > 0) {
+            const majorLabels = selectedMajors.map(id => 
+                mockFaculties.flatMap(f => f.majors).find(m => m.id === id)?.label
+            );
+            if (!majorLabels.some(label => label && project.major.includes(label))) return false;
+        }
+
+        return true;
+    }
+
+    // Filter and sort projects
     const sortedProjects = $derived.by(() => {
-        const sorted = [...mockProjects];
+        const filtered = mockProjects.filter(matches);
+        
+        const sorted = [...filtered];
         switch (sortBy) {
             case 'newest':
                 return sorted.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
@@ -181,6 +209,13 @@
         isDropdownOpen = false;
         currentPage = 1; // Reset to first page when sorting changes
     }
+
+    // Reset pagination when filters change
+    $effect(() => {
+        selectedYears;
+        selectedMajors;
+        currentPage = 1;
+    });
 
     // Handle page change
     function goToPage(pageNum: number) {
@@ -220,7 +255,7 @@
         <section> 
             <div class="w-full flex items-start divide-x-2 divide-gray-600 px-2">
                 <div class="w-1/5 pr-2 sticky top-0 h-screen overflow-y-auto">
-                    <FilterSideBar {faculties} />
+                    <FilterSideBar {faculties} bind:selectedYears bind:selectedMajors/>
                 </div>
 
                 <div class="w-4/5 flex flex-col gap-4 pl-4">
@@ -266,8 +301,9 @@
 
                     <!-- Project Cards -->
                     <div class="flex flex-col gap-4">
-                        {#each paginatedProjects as project (project.titleThai)}
+                        {#each paginatedProjects as project (project.id)}
                             <CardProjectDetail 
+                                id={project.id}
                                 faculty={project.faculty}
                                 major={project.major}
                                 author={project.author}

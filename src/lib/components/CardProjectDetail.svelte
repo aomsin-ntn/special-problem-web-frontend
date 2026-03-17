@@ -2,6 +2,7 @@
     import { UserRound, CalendarDays } from 'lucide-svelte';
 
     interface Props {
+        id?: string;
         faculty?: string;
         major?: string;
         titleThai?: string;
@@ -13,6 +14,7 @@
     }
 
     let {
+        id = '1',
         faculty = "คณะวิทยาศาสตร์",
         major = "คณิตศาสตร์",
         titleThai = "ชื่อโปรเจคภาษาไทย",
@@ -22,15 +24,21 @@
         semester = "ปีการศึกษา 2567",
         keywords = []
     }: Props = $props();
-    
+
+    function handleClick() {
+        window.location.href = `/project-detail?id=${id}`;
+    }
 </script>
 
-<div class="w-full bg-white rounded-xl border border-gray-200 shadow-md p-4 flex flex-wrap gap-6 
-            hover:scale-101 transition-transform duration-300 cursor-pointer">
+<button
+    onclick={handleClick}
+    class="w-full bg-white rounded-xl border border-gray-200 shadow-md p-4 flex flex-wrap gap-6 
+            hover:scale-101 transition-transform duration-300 cursor-pointer hover:shadow-lg"
+>
 
     <img src="https://placehold.co/165x250" alt="Project Thumbnail"/>
 
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 items-start text-start">
         <div class="flex gap-2">
             <div class="badge badge-outline border-orange-100 text-orange-100">{faculty}</div>
             <div class="badge badge-outline border-orange-700 text-orange-700">{major}</div>
@@ -72,4 +80,4 @@
         </div>
     </div>
     
-</div>
+</button>

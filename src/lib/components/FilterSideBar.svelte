@@ -12,12 +12,15 @@
 
     interface Props {
         faculties?: Faculty[];
+        selectedYears?: string[];
+        selectedMajors?:string[];
     }
 
-    let { faculties = [] }: Props = $props();
-
-    let selectedYears = $state<string[]>([]);
-    let selectedMajors = $state<string[]>([]);
+    let {
+        faculties = [],
+        selectedYears = $bindable([]),
+        selectedMajors = $bindable([])
+    }: Props = $props(); 
 
     let openSections = $state<Record<string, boolean>>({
         year: true,
