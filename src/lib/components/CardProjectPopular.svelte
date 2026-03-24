@@ -34,10 +34,10 @@
     <hr class="border-gray-500"/>
 
     <div class="w-full flex flex-col gap-2 text-start">
-        <p class="text-black line-clamp-2 text-ellipsis text-sm md:text-base lg:text-base font-medium">
+        <p class="text-black line-clamp-2 text-ellipsis text-lg font-medium">
             {titleThai}
         </p>
-        <p class="text-black line-clamp-2 text-ellipsis text-sm md:text-base lg:text-base font-medium">
+        <p class="text-black line-clamp-2 text-ellipsis text-sm font-medium">
             {titleEnglish}
         </p>
     </div>

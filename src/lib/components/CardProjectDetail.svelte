@@ -36,9 +36,9 @@
             hover:scale-101 transition-transform duration-300 cursor-pointer hover:shadow-lg"
 >
 
-    <img src="https://placehold.co/165x250" alt="Project Thumbnail"/>
+    <img src="https://placehold.co/165x260" alt="Project Thumbnail" class="h-full rounded-lg "/>
 
-    <div class="flex flex-col gap-4 items-start text-start">
+    <div class="flex flex-col gap-4 justify-center items-start text-start py-2">
         <div class="flex gap-2">
             <div class="badge badge-outline border-orange-100 text-orange-100">{faculty}</div>
             <div class="badge badge-outline border-orange-700 text-orange-700">{major}</div>
@@ -52,7 +52,7 @@
         </p>
 
         <div class="w-full flex flex-wrap gap-20">
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
                 {#each author as authorName, index (index)}
                     <p class="text-black truncate text-sm md:text-sm lg:text-sm font-light flex items-center gap-2">
                         <UserRound class="w-4 h-4" /><span>{authorName}</span>
@@ -75,7 +75,7 @@
         
         <div class="flex flex-wrap gap-4">
             {#each keywords as keyword, index (index)}
-                <div class="badge bg-pink-100 border-pink-100 text-pink-500">{keyword}</div>
+                <div class="badge bg-orange-200 border-orange-200 text-orange-100">{keyword}</div>
             {/each}
         </div>
     </div>

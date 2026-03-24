@@ -6,34 +6,39 @@
 
 	const cardsPopular = [
 		{
-			category: "สหกิจศึกษา",
-			titleThai: "ชื่อโปรเจคภาษาไทย",
-			titleEnglish: "ชื่อโปรเจคภาษาอังกฤษ",
-			keywords: ["คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ"]
+			id: "1",
+			category: "ปัญหาพิเศษ",
+			titleThai: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง",
+			titleEnglish: "Development of a Book Recommendation System Using Machine Learning Techniques",
+			keywords: ["ระบบแนะนำหนังสือ", "การเรียนรู้ของเครื่อง", "การประมวลผลภาษาธรรมชาติ"]
 		},
 		{
+			id: "2",
 			category: "ปัญหาพิเศษ",
-			titleThai: "ชื่อโปรเจคภาษาไทย",
-			titleEnglish: "ชื่อโปรเจคภาษาอังกฤษ",
-			keywords: ["คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ"]
+			titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย",
+			titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
+			keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"]
 		},
 		{
+			id: "3",
 			category: "ปัญหาพิเศษ",
-			titleThai: "ชื่อโปรเจคภาษาไทย",
-			titleEnglish: "ชื่อโปรเจคภาษาอังกฤษ",
-			keywords: ["คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ"]
+			titleThai: "ระบบตรวจจับความผิดปกติโดยใช้การเรียนรู้เชิงลึก",
+			titleEnglish: "Anomaly Detection System Using Deep Learning",
+			keywords: ["การตรวจจับความผิดปกติ", "เรียนรู้เชิงลึก", "โครงข่ายประสาทเทียม"]
 		},
 		{
+			id: "4",
 			category: "ปัญหาพิเศษ",
-			titleThai: "ชื่อโปรเจคภาษาไทย",
-			titleEnglish: "ชื่อโปรเจคภาษาอังกฤษ",
-			keywords: ["คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ"]
+			titleThai: "การพยากรณ์ราคาหุ้นด้วยเครือข่ายประสาทเทียม",
+			titleEnglish: "Stock Price Prediction Using Neural Networks",
+			keywords: ["พยากรณ์ราคา", "เครือข่ายประสาทเทียม", "ตลาดหุ้น"]
 		},
 		{
+			id: "5",
 			category: "ปัญหาพิเศษ",
-			titleThai: "ชื่อโปรเจคภาษาไทย",
-			titleEnglish: "ชื่อโปรเจคภาษาอังกฤษ",
-			keywords: ["คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ", "คำสำคัญ"]
+			titleThai: "ระบบจดจำรูปภาพใบหน้าขั้นสูง",
+			titleEnglish: "Advanced Facial Recognition System",
+			keywords: ["จดจำใบหน้า", "การประมวลผลภาพ", "การรักษาความปลอดภัย"]
 		}
 	];
 
@@ -74,6 +79,7 @@
 			<ul class="flex flex-wrap justify-between">
 				{#each cardsPopular.slice(0, 5) as cardPop}
 					<CardPopular 
+						id={cardPop.id}
 						category={cardPop.category}
 						titleThai={cardPop.titleThai}
 						titleEnglish={cardPop.titleEnglish}
