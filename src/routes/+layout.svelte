@@ -1,15 +1,22 @@
 <script lang="ts">
 	import './layout.css';
-	import Navbar from '../components/Navbar.svelte';
-	import favicon from '$lib/assets/favicon.svg';
+	import Navbar from '$lib/components/Navbar.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import KmitlLogo from '$lib/assets/Kmitl-logo-navbar.png';
 
 	let { children } = $props();
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
+<svelte:head>
+	<link rel="icon" href={KmitlLogo} />
+	<title>Special Problem Web App</title>
+</svelte:head>
 
 <Navbar />
 
-<div class="bg-gray-50 min-h-screen w-full overflow-x-hidden">
+
+<div class="min-h-screen">
 	{@render children()}
 </div>
+
+<Footer />
