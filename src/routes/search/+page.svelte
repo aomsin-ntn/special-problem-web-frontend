@@ -356,13 +356,8 @@
                             </button>
                         </div>
                     {/if}
-
                 </div>
-
             </div>
-
         </section>
-        
     </section>
-
 </main>

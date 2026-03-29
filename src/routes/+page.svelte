@@ -4,45 +4,70 @@
 	import CardPopular from '$lib/components/CardProjectPopular.svelte';
 	import MenuCategory from '$lib/components/MenuCategory.svelte';
 
-	const cardsPopular = [
+	interface ProjectCard {
+        id: string;
+        titleThai: string;
+        titleEnglish: string;
+        keywords: string[];
+    }
+
+	interface MenuCategoryItem {
+        label: string;
+        destination: string;
+    }
+
+	const cardsPopular: ProjectCard[] = [
 		{
 			id: "1",
-			category: "ปัญหาพิเศษ",
 			titleThai: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง",
 			titleEnglish: "Development of a Book Recommendation System Using Machine Learning Techniques",
 			keywords: ["ระบบแนะนำหนังสือ", "การเรียนรู้ของเครื่อง", "การประมวลผลภาษาธรรมชาติ"]
 		},
 		{
 			id: "2",
-			category: "ปัญหาพิเศษ",
 			titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย",
 			titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
 			keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"]
 		},
 		{
 			id: "3",
-			category: "ปัญหาพิเศษ",
 			titleThai: "ระบบตรวจจับความผิดปกติโดยใช้การเรียนรู้เชิงลึก",
 			titleEnglish: "Anomaly Detection System Using Deep Learning",
 			keywords: ["การตรวจจับความผิดปกติ", "เรียนรู้เชิงลึก", "โครงข่ายประสาทเทียม"]
 		},
 		{
 			id: "4",
-			category: "ปัญหาพิเศษ",
 			titleThai: "การพยากรณ์ราคาหุ้นด้วยเครือข่ายประสาทเทียม",
 			titleEnglish: "Stock Price Prediction Using Neural Networks",
 			keywords: ["พยากรณ์ราคา", "เครือข่ายประสาทเทียม", "ตลาดหุ้น"]
 		},
 		{
 			id: "5",
-			category: "ปัญหาพิเศษ",
 			titleThai: "ระบบจดจำรูปภาพใบหน้าขั้นสูง",
 			titleEnglish: "Advanced Facial Recognition System",
 			keywords: ["จดจำใบหน้า", "การประมวลผลภาพ", "การรักษาความปลอดภัย"]
-		}
+		},
+        {
+            id: "6",
+            titleThai: "การพัฒนาระบบคลังสินค้าอัจฉริยะด้วย IoT",
+            titleEnglish: "Smart Warehouse System Development using IoT",
+            keywords: ["คลังสินค้า", "IoT", "อัตโนมัติ"]
+        },
+        {
+            id: "7",
+            titleThai: "แอปพลิเคชันจัดการการเงินส่วนบุคคลบนมือถือ",
+            titleEnglish: "Personal Finance Management Mobile Application",
+            keywords: ["การเงิน", "แอปพลิเคชัน", "วางแผน"]
+        },
+        {
+            id: "8",
+            titleThai: "การจำลองการจราจรโดยใช้ทฤษฎีคิว",
+            titleEnglish: "Traffic Simulation Using Queuing Theory",
+            keywords: ["การจราจร", "ทฤษฎีคิว", "แบบจำลอง"]
+        }
 	];
 
-	const menuCategories = [
+	const menuCategories: MenuCategoryItem[] = [
 		{ label: "คณะวิศวกรรมศาสตร์", destination: "/faculty/engineering" },
 		{ label: "คณะวิทยาศาสตร์", destination: "/faculty/science" },
 		{ label: "คณะสถาปัตยกรรมศาสตร์", destination: "/faculty/architecture" },
@@ -74,13 +99,12 @@
 	<section class="w-full bg-white">
 		<div class="flex flex-col gap-10 py-12 px-10 md:px-20 lg:px-30 ">
 			<p class="text-black text-lg md:text-xl lg:text-2xl font-semibold">
-				ปัญหาพิเศษที่กำลังเป็นที่สนใจ
+				ปัญหาพิเศษยอดนิยม
 			</p>
 			<ul class="flex flex-wrap justify-between">
 				{#each cardsPopular.slice(0, 5) as cardPop}
 					<CardPopular 
 						id={cardPop.id}
-						category={cardPop.category}
 						titleThai={cardPop.titleThai}
 						titleEnglish={cardPop.titleEnglish}
 						keywords={cardPop.keywords}
@@ -104,6 +128,4 @@
 			</div>
 		</div>
 	</section>
-
-	
 </main>

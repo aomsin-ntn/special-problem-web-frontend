@@ -1,7 +1,6 @@
 <script lang="ts">
     interface Props {
         id?: string;
-        category?: string;
         titleThai?: string;
         titleEnglish?: string;
         keywords?: string[];
@@ -9,7 +8,6 @@
 
     let {
         id = '1',
-        category = "ปัญหาพิเศษ",
         titleThai = "ชื่อโปรเจคภาษาไทย",
         titleEnglish = "ชื่อโปรเจคภาษาอังกฤษ",
         keywords = []
@@ -27,7 +25,7 @@
 >
     <div>
         <p class="text-black text-sm md:text-sm lg:text-sm font-light text-start">
-            {category}
+            ปัญหาพิเศษ
         </p>
     </div>
 
