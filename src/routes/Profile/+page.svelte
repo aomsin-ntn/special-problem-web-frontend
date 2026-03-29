@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Mail } from 'lucide-svelte';
+	import CardProjectDetail from '$lib/components/CardProjectDetail.svelte';
+	import { onMount } from 'svelte';
 	
 	interface StudentProfile {
 		studentIdText: string;
@@ -9,6 +11,26 @@
 		faculty: string;
 		department: string;
 		email: string;
+	}
+
+	interface ProjectData {
+		title: string;
+		faculty: string;
+		department: string;
+		degree: string;
+		academicYear: string;
+		authors: Array<{ name: string }>;
+		advisors: Array<{ name: string }>;
+		abstract: string;
+		keywords: string[];
+	}
+
+	interface UploadedProject {
+		fileName: string;
+		selectedPages: number[];
+		thai: ProjectData;
+		english: ProjectData;
+		uploadedAt: string;
 	}
 
 	let profileData = $state<StudentProfile>({
@@ -20,9 +42,23 @@
 		email: '65050702@kmitl.ac.th',
 	});
 
+	let uploadedProject = $state<UploadedProject | null>(null);
+
 	const handleUpload = () => {
 		goto('/upload-project');
 	};
+
+	onMount(() => {
+		// Load project data from localStorage
+		const storedProject = localStorage.getItem('lastUploadedProject');
+		if (storedProject) {
+			try {
+				uploadedProject = JSON.parse(storedProject);
+			} catch (error) {
+				console.error('Error parsing stored project:', error);
+			}
+		}
+	});
 </script>
 
 <div class="bg-white min-h-screen">
@@ -62,12 +98,26 @@
 				</button>
 			</div>
 
-			
-			<div>
-				<p class="text-center text-gray-300 p-12 italic text-lg md:text-xl lg:text-2xl font-semibold">
-					ไม่มีโปรเจคในขณะนี้ กดปุ่ม Upload เพื่อเพิ่มโปรเจคของคุณ.
-				</p>
-			</div>
+			{#if uploadedProject}
+				<div class="space-y-6">
+					<CardProjectDetail
+						faculty={uploadedProject.thai.faculty}
+						major={uploadedProject.thai.department}
+						titleThai={uploadedProject.thai.title}
+						titleEnglish={uploadedProject.english.title}
+						author={uploadedProject.thai.authors.map(a => a.name)}
+						advisor={uploadedProject.thai.advisors.map(a => a.name)}
+						semester={`ปีการศึกษา ${uploadedProject.thai.academicYear}`}
+						keywords={uploadedProject.thai.keywords}
+					/>
+				</div>
+			{:else}
+				<div>
+					<p class="text-center text-gray-300 p-12 italic text-lg md:text-xl lg:text-2xl font-semibold">
+						ไม่มีโปรเจคในขณะนี้ กดปุ่ม Upload เพื่อเพิ่มโปรเจคของคุณ.
+					</p>
+				</div>
+			{/if}
 		</section>
 		
 	</div>
