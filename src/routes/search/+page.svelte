@@ -1,9 +1,12 @@
 <script lang="ts">
+    import { page } from '$app/state';
+    import { goto } from '$app/navigation';
+    import { PUBLIC_API_URL } from '$env/static/public';
     import { onMount } from 'svelte';
     import SearchBar from "$lib/components/SearchBar.svelte";
     import FilterSideBar from "$lib/components/FilterSideBar.svelte";
     import CardProjectDetail from '$lib/components/CardProjectDetail.svelte';
-    import { page } from '$app/state';
+    
 
     interface Option {
         id: string;
@@ -11,7 +14,7 @@
     }
 
     interface Faculty extends Option {
-        majors: Option[];
+        departments: Option[];
     }
 
     interface SortOption {
@@ -27,7 +30,7 @@
     let currentPage = $state<number>(1);
     const itemsPerPage = 10;
     let selectedYears = $state<string[]>([]);
-    let selectedMajors = $state<string[]>([]);
+    let selectedDepartments = $state<string[]>([]);
 
     const sortOptions: SortOption[] = [
         { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'newest' },
@@ -40,7 +43,7 @@
         {
             id: '1',
             faculty: "คณะวิทยาศาสตร์",
-            major: "สาขาวิทยาการคอมพิวเตอร์",
+            department: "สาขาวิทยาการคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2567",
@@ -53,7 +56,7 @@
         {
             id: '2',
             faculty: "คณะบริหารธุรกิจ",
-            major: "สาขาการตลาด",
+            department: "สาขาการตลาด",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2568",
@@ -66,7 +69,7 @@
         {
             id: '3',
             faculty: "คณะวิศวกรรมศาสตร์",
-            major: "สาขาวิศวกรรมคอมพิวเตอร์",
+            department: "สาขาวิศวกรรมคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2569",
@@ -79,7 +82,7 @@
         {
             id: '4',
             faculty: "คณะวิทยาศาสตร์",
-            major: "สาขาวิทยาการคอมพิวเตอร์",
+            department: "สาขาวิทยาการคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2567",
@@ -92,7 +95,7 @@
         {
             id: '5',
             faculty: "คณะวิทยาศาสตร์",
-            major: "สาขาวิทยาการคอมพิวเตอร์",
+            department: "สาขาวิทยาการคอมพิวเตอร์",
             author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
             advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
             semester: "ปีการศึกษา 2567",
@@ -108,7 +111,7 @@
         {
             id: 'eng',
             label: 'คณะวิศวกรรมศาสตร์',
-            majors: [
+            departments: [
                 { id: 'eng-cs', label: 'วิศวกรรมคอมพิวเตอร์' },
                 { id: 'eng-ee', label: 'วิศวกรรมไฟฟ้า' },
                 { id: 'eng-me', label: 'วิศวกรรมเครื่องกล' },
@@ -119,7 +122,7 @@
         {
             id: 'sci',
             label: 'คณะวิทยาศาสตร์',
-            majors: [
+            departments: [
                 { id: 'sci-math', label: 'คณิตศาสตร์' },
                 { id: 'sci-physics', label: 'ฟิสิกส์' },
                 { id: 'sci-chem', label: 'เคมี' },
@@ -130,7 +133,7 @@
         {
             id: 'bus',
             label: 'คณะบริหารธุรกิจ',
-            majors: [
+            departments: [
                 { id: 'bus-acc', label: 'การบัญชี' },
                 { id: 'bus-fin', label: 'การเงิน' },
                 { id: 'bus-mkt', label: 'การตลาด' },
@@ -140,7 +143,7 @@
         {
             id: 'arch',
             label: 'คณะสถาปัตยกรรมศาสตร์',
-            majors: [
+            departments: [
                 { id: 'arch-arch', label: 'สถาปัตยกรรม' },
                 { id: 'arch-id', label: 'การออกแบบภายใน' },
                 { id: 'arch-ud', label: 'การผังเมือง' },
@@ -150,7 +153,7 @@
 
     let faculties = $state<Faculty[]>([]);
 
-    // Helper function to match project major with selected majors
+    // function to match project department with selected departments
     function matches(project: typeof mockProjects[0]): boolean {
         // Filter by year
         if (selectedYears.length > 0) {
@@ -158,12 +161,12 @@
             if (!projectYear || !selectedYears.includes(projectYear)) return false;
         }
 
-        // Filter by major
-        if (selectedMajors.length > 0) {
-            const majorLabels = selectedMajors.map(id => 
-                mockFaculties.flatMap(f => f.majors).find(m => m.id === id)?.label
+        // Filter by department
+        if (selectedDepartments.length > 0) {
+            const departmentLabels = selectedDepartments.map(id => 
+                mockFaculties.flatMap(f => f.departments).find(d => d.id === id)?.label
             );
-            if (!majorLabels.some(label => label && project.major.includes(label))) return false;
+            if (!departmentLabels.some(label => label && project.department.includes(label))) return false;
         }
 
         return true;
@@ -213,7 +216,7 @@
     // Reset pagination when filters change
     $effect(() => {
         selectedYears;
-        selectedMajors;
+        selectedDepartments;
         currentPage = 1;
     });
 
@@ -255,7 +258,7 @@
         <section> 
             <div class="w-full flex items-start divide-x-2 divide-gray-600 px-2">
                 <div class="w-1/5 pr-2 sticky top-0 h-screen overflow-y-auto">
-                    <FilterSideBar {faculties} bind:selectedYears bind:selectedMajors/>
+                    <FilterSideBar {faculties} bind:selectedYears bind:selectedDepartments/>
                 </div>
 
                 <div class="w-4/5 flex flex-col gap-4 pl-4">
@@ -305,7 +308,7 @@
                             <CardProjectDetail 
                                 id={project.id}
                                 faculty={project.faculty}
-                                major={project.major}
+                                department={project.department}
                                 author={project.author}
                                 advisor={project.advisor}
                                 semester={project.semester}
