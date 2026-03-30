@@ -3,13 +3,13 @@
     import { Menu, X, LogOut, User } from 'lucide-svelte';
     import { goto } from '$app/navigation';
     import { slide } from 'svelte/transition';
-    import { authStore, type AuthStore } from '$lib/stores/authStore';
+    import { authStore, logoutAuth } from '$lib/stores/authStore';
 
     let isMobileMenuOpen = $state(false);
     let isDropdownOpen = $state(false);
     let dropdownRef = $state<HTMLElement | null>(null);
 
-    let auth = $state<AuthStore>({ isLoggedIn: false, user: null });
+    let auth = $state({ isLoggedIn: false, user: null as any});
 
     const unsubscribe = authStore.subscribe((value) => {
         auth = value;
@@ -21,9 +21,12 @@
         goto(href);
     }
 
-    function handleLogout(): void {
-        authStore.logout();
+    async function handleLogout() {
         isDropdownOpen = false;
+        isMobileMenuOpen = false;
+
+        await logoutAuth();
+
         window.location.href = '/';
     }
 
@@ -78,7 +81,7 @@
                     class="flex items-center gap-2 hover:text-yellow-300 transition-colors cursor-pointer bg-none border-none p-0"
                 >
                     <User size={18} />
-                    <span>{auth.user?.username}</span>
+                    <span>{auth.user?.email}</span>
                 </button>
                 
                 {#if isDropdownOpen}
