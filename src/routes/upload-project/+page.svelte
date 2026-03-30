@@ -1,9 +1,15 @@
+<svelte:head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</svelte:head>
+
 <script lang="ts">
-    import type { ProjectData } from '$lib/stores/types';
-    import OcrForm from '$lib/components/OcrForm.svelte';
-    import { Upload, FileCheckCorner, SquarePen } from 'lucide-svelte';
+    import { Upload, FileCheckCorner, SquarePen, Form } from 'lucide-svelte';
     import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
+    import type { ProjectData } from '$lib/stores/types';
+    import Abstract_th_page from '$lib/assets/Abstract_th_page.jpg';
+    import Abstract_en_page from '$lib/assets/Abstract_en_page.jpg';
+    import OcrForm from '$lib/components/OcrForm.svelte';
+    import { PUBLIC_API_URL } from '$env/static/public';
 
     let currentStep = $state(1);
     const stepItems = [
@@ -16,86 +22,88 @@
     let uploadedFile = $state<File | null>(null);
     let fileDetails = $state({ name: '', pages: 0 });
 
-    const handleFileDrop = (event: DragEvent) => {
-        event.preventDefault();
-        const file = event.dataTransfer?.files[0];
-        if (file && file.type === 'application/pdf') {
-            uploadedFile = file;
-            simulateFileUpload(file);
-        } else {
-            alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
-        }
-    };
+    let pageThumbnails = $state<{ id: number; src: string }[]>([]);
+	let isGeneratingThumbnails = $state(false);
 
-    const handleFileSelect = (event: Event) => {
-        const file = (event.target as HTMLInputElement).files?.[0];
-        if (file && file.type === 'application/pdf') {
-            uploadedFile = file;
-            simulateFileUpload(file);
-        } else {
-            alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
-        }
-    };
+	const processPdfForThumbnails = async (file: File) => {
+		isGeneratingThumbnails = true;
+		pageThumbnails = [];
 
-    const simulateFileUpload = (file: File) => {
-        setTimeout(() => {
-            fileDetails = { name: file.name, pages: Math.floor(Math.random() * 50) + 1 };
-        }, 500);
-    };
+		try {
+			const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
+			pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+			const arrayBuffer = await file.arrayBuffer();
+			const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+			const totalPages = pdf.numPages;
+			fileDetails = { name: file.name, pages: totalPages };
+
+			let tempThumbnails = [];
+
+			for (let i = 1; i <= totalPages; i++) {
+				const page = await pdf.getPage(i);
+				
+				const viewport = page.getViewport({ scale: 0.4 }); 
+
+				const canvas = document.createElement('canvas');
+				const context = canvas.getContext('2d');
+
+				if (!context) throw new Error('Canvas not supported');
+
+				canvas.height = viewport.height;
+				canvas.width = viewport.width;
+
+				await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+				tempThumbnails.push({
+					id: i,
+					src: canvas.toDataURL('image/jpeg', 0.8)
+				});
+			}
+
+			pageThumbnails = tempThumbnails;
+		} catch (error) {
+			console.error('PDF Error:', error);
+			alert('เกิดข้อผิดพลาดในการอ่านไฟล์ PDF');
+			uploadedFile = null;
+		} finally {
+			isGeneratingThumbnails = false;
+		}
+	};
+
+	const handleFileDrop = (event: DragEvent) => {
+		event.preventDefault();
+		const file = event.dataTransfer?.files[0];
+		if (file && file.type === 'application/pdf') {
+			uploadedFile = file;
+			processPdfForThumbnails(file);
+		} else {
+			alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
+		}
+	};
+
+	const handleFileSelect = (event: Event) => {
+		const file = (event.target as HTMLInputElement).files?.[0];
+		if (file && file.type === 'application/pdf') {
+			uploadedFile = file;
+			processPdfForThumbnails(file);
+		} else {
+			alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
+		}
+	};
 
     let selectedPages = $state<number[]>([]);
-    const totalPages = $derived(fileDetails.pages);
-    let currentPaginationPage = $state(0);
-    let windowWidth = $state(typeof window !== 'undefined' ? window.innerWidth : 1024);
     
-    const itemsPerPage = $derived(windowWidth < 768 ? 4 : 8);
-
-    const pageThumbnails = $derived(Array.from({ length: totalPages }, (_, i) => ({ id: i + 1, src: '/path/to/placeholder.jpg' })));
-    
-    const paginatedThumbnails = $derived(pageThumbnails.slice(
-        currentPaginationPage * itemsPerPage,
-        (currentPaginationPage + 1) * itemsPerPage
-    ));
-    
-    const totalPaginationPages = $derived(Math.ceil(totalPages / itemsPerPage));
-
-    const goToPreviousPage = () => {
-        if (currentPaginationPage > 0) currentPaginationPage--;
-    };
-
-    const goToNextPage = () => {
-        if (currentPaginationPage < totalPaginationPages - 1) currentPaginationPage++;
-    };
-
-    const paginationIndices = $derived(Array.from({ length: totalPaginationPages }, (_, i) => i));
-
-    onMount(() => {
-        const handleResize = () => {
-            const newWidth = window.innerWidth;
-            const oldItemsPerPage = windowWidth < 768 ? 4 : 8;
-            const newItemsPerPage = newWidth < 768 ? 4 : 8;
-            
-            windowWidth = newWidth;
-            
-            // Reset pagination ถ้า itemsPerPage เปลี่ยน
-            if (oldItemsPerPage !== newItemsPerPage) {
-                currentPaginationPage = 0;
-            }
-        };
-        
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    });
-
     const togglePageSelection = (pageNumber: number) => {
-        if (selectedPages.includes(pageNumber)) {
-            selectedPages = selectedPages.filter(p => p !== pageNumber);
-        } else if (selectedPages.length < 2) {
-            selectedPages = [...selectedPages, pageNumber];
-        } else {
-            alert('คุณสามารถเลือกได้สูงสุด 2 หน้า');
-        }
-    };
+		if (selectedPages.includes(pageNumber)) {
+			selectedPages = selectedPages.filter((p) => p !== pageNumber);
+		} else if (selectedPages.length < 2) {
+			selectedPages = [...selectedPages, pageNumber];
+		} else {
+			alert('คุณสามารถเลือกได้สูงสุด 2 หน้า เท่านั้น');
+		}
+	};
 
     let isLoadingOcr = $state(false);
     let ocrDataThai = $state<ProjectData>({
@@ -105,6 +113,9 @@
         title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
     });
 
+    /**
+     * 
+    
     const simulateOcrProcess = () => {
         isLoadingOcr = true;
         setTimeout(() => {
@@ -133,67 +144,84 @@
             isLoadingOcr = false;
         }, 1500);
     };
+    */
 
-    const nextStep = () => {
-        if (currentStep < 3) {
-            currentStep++;
-            currentPaginationPage = 0; 
+    let currentProjectID = $state<string>('');
+
+    //ส่งไฟล์ให้ back ไปทำ OCR และบันทึก project ลง database
+    const extractOcrData = async () => {
+        isLoadingOcr = true;
+        try {
+            const sortedPages = [...selectedPages].sort((a, b) => a - b);
+            
+            const formData = new FormData();
+            formData.append('file', uploadedFile as File);
+            formData.append('selected_pages', JSON.stringify(sortedPages));
+
+            const response = await fetch(`${PUBLIC_API_URL}/project/ocr`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Server responded failed with status ' + response.status);
+
+            const data = await response.json();
+
+            currentProjectID = data.projectId;
+            ocrDataThai = data.thai;
+            ocrDataEnglish = data.english;
+        } catch (error) {
+            console.error('OCR Error:', error);
+            alert('OCR processing failed');
+            currentStep = 2;
+        } finally {
+            isLoadingOcr = false;
         }
-        if (currentStep === 3) simulateOcrProcess();
+    }
+    
+    const nextStep = () => {
+        if (currentStep < 3) currentStep++;
+        if (currentStep === 3) extractOcrData();
     };
+
     const prevStep = () => {
         if (currentStep > 1) currentStep--;
     };
 
     const handleSubmit = async (event: SubmitEvent) => {
         event.preventDefault();
-        
+        isLoadingOcr = true;
         try {
-            const payload = {
-                selectedPages: selectedPages
+            if (!currentProjectID) throw new Error('ไม่พบรหัสโปรเจกต์อ้างอิง');
+
+            const projectPayload = {
+                thai: ocrDataThai,
+                english: ocrDataEnglish
             };
 
-            const response = await fetch('/api/projects', {
+            const response = await fetch(`${PUBLIC_API_URL}/project/edit`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(projectPayload)
             });
 
-            if (response.ok) {
-                const projectData = {
-                    fileName: fileDetails.name,
-                    selectedPages: selectedPages,
-                    thai: ocrDataThai,
-                    english: ocrDataEnglish,
-                    uploadedAt: new Date().toISOString()
-                };
-                
-                localStorage.setItem('lastUploadedProject', JSON.stringify(projectData));
-                
-                alert('บันทึกข้อมูลสำเร็จ');
-                
-                currentStep = 1;
-                currentPaginationPage = 0;
-                uploadedFile = null;
-                fileDetails = { name: '', pages: 0 };
-                selectedPages = [];
-                ocrDataThai = {
-                    title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
-                };
-                ocrDataEnglish = {
-                    title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
-                };
-    
-                await goto('/Profile');
-            } else {
-                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
-            }
+            if (!response.ok) throw new Error('Failed to save project data: ' + response.status);
+
+            alert('บันทึกข้อมูลโปรเจกต์สำเร็จ');
+            currentStep = 1;
+            uploadedFile = null;
+            selectedPages = [];
+            currentProjectID = '';
+
+            await goto('/Profile');
+
         } catch (error) {
-            console.error('Error:', error);
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            console.error('Save Error:', error);
+            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+        } finally {
+            isLoadingOcr = false;
         }
+        
     };
 
 </script>
@@ -252,13 +280,18 @@
                 {/if}
             </div>
             <div class="max-w-6xl mx-auto flex justify-center mt-10">
-                <button 
-                    class="w-full text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:hidden disabled:bg-gray-400 shadow-sm" 
-                    onclick={nextStep} 
-                    disabled={!uploadedFile}>
-                    ถัดไป
-                </button>
-            </div>
+				<button
+					class="w-full text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:hidden disabled:bg-gray-400 shadow-sm flex items-center justify-center gap-2"
+					onclick={nextStep}
+					disabled={!uploadedFile || isGeneratingThumbnails}
+				>
+					{#if isGeneratingThumbnails}
+						<span class="loading loading-spinner loading-sm"></span> กำลังสร้างภาพตัวอย่าง...
+					{:else}
+						ถัดไป
+					{/if}
+				</button>
+			</div>
         </section>
     {/if}
 
@@ -272,11 +305,11 @@
                     <div class="grid grid-cols-2 gap-8 px-10">
                         <div class="preview-item flex flex-col items-center gap-2">
                             <p class="text-sm font-semibold text-black">หน้าบทคัดย่อภาษาไทย</p>
-                            <img src="/path/to/thai-abstract-placeholder.jpg" alt="Thai Abstract Placeholder" class="aspect-3/4 w-full max-w-xs border-2 border-orange-300 rounded bg-gray-100 shadow-md">
+                            <img src={Abstract_th_page} alt="Thai Abstract Placeholder" class="aspect-3/4 w-full max-w-xs border-2 border-orange-300 rounded bg-gray-100 shadow-md">
                         </div>
                         <div class="preview-item flex flex-col items-center gap-2">
                             <p class="text-sm font-semibold">หน้าบทคัดย่อภาษาอังกฤษ</p>
-                            <img src="/path/to/english-abstract-placeholder.jpg" alt="English Abstract Placeholder" class="aspect-3/4 w-full max-w-xs border-2 border-orange-300 rounded bg-gray-100 shadow-md">
+                            <img src={Abstract_en_page} alt="English Abstract Placeholder" class="aspect-3/4 w-full max-w-xs border-2 border-orange-300 rounded bg-gray-100 shadow-md">
                         </div>
                     </div>
                     <div class="mt-6 flex flex-col gap-2 text-sm text-left px-10">
@@ -288,58 +321,47 @@
                     </div>
                 </div>
 
-                <div class="p-6 border-2 border-orange-200 rounded-xl bg-orange-50">
-                    <p class="text-center mb-2 font-semibold">เลือกหน้าจากไฟล์โปรเจกต์ของคุณเพื่อประมวลผลข้อมูลโปรเจกต์</p>
-                    <p class="text-center mb-6">จำนวน 2 หน้า</p>
-                    
-                    <div class="flex items-center justify-between gap-4">
-                        <button 
-                            class="btn btn-sm btn-circle bg-orange-500 hover:bg-orange-600 text-white border-none disabled:bg-gray-300"
-                            onclick={goToPreviousPage}
-                            disabled={currentPaginationPage === 0}>
-                            ❮
-                        </button>
+                <p class="text-center mb-2 font-semibold">เลือกหน้าจากไฟล์โปรเจกต์ของคุณเพื่อประมวลผลข้อมูลโปรเจกต์</p>
+                <p class="text-center mb-6">จำนวน 2 หน้า</p>
+                <div class="border-2 border-orange-200 rounded-xl bg-orange-50 p-6 h-125 md:h-150 overflow-y-auto">                    
 
-                        <div class="grid gap-4 flex-1 sm:grid-cols-2 md:grid-cols-4">
-                            {#each paginatedThumbnails as { id }, index (index)}
-                                <button 
-                                    class="thumbnail-item flex flex-col items-center gap-2 relative border-2 rounded p-2 transition-all duration-300 font-semibold
-                                        {selectedPages.includes(id) ? 'border-orange-500 bg-orange-700 shadow-lg scale-105' : 'border-orange-200 bg-white hover:border-orange-400'}"
+					
+                        <div class="flex flex-wrap justify-center gap-6 md:gap-8">
+                            {#each pageThumbnails as { id, src }, index (index)}
+                                
+                                <button
+                                    class="group relative flex flex-col items-center gap-3 w-28 md:w-36 transition-transform duration-200 
+                                    {selectedPages.includes(id) ? 'scale-105' : 'hover:scale-105'}"
                                     onclick={() => togglePageSelection(id)}
                                 >
-                                    <img src="/path/to/placeholder.jpg" alt="Page {id}" class="aspect-3/4 w-full border border-orange-300 rounded bg-gray-100">
-                                    <span class="text-gray-700">หน้า {id}</span>
+                                    <div class="relative w-full aspect-[1/1.414] bg-white shadow-sm transition-all duration-200 flex items-center justify-center overflow-hidden
+                                        {selectedPages.includes(id) ? 'border-4 border-orange-500 shadow-xl' : 'border border-gray-300 group-hover:border-orange-400 group-hover:shadow-md'}">
+                                        
+                                        <img {src} alt="Page {id}" class="w-full h-full object-cover" />
+                                        
+                                        {#if selectedPages.includes(id)}
+                                            <div class="absolute inset-0 bg-orange-500 opacity-10"></div>
+                                        {/if}
+                                    </div>
+                                    
+                                    <span class="text-gray-700 font-semibold text-sm">หน้า {id}</span>
+
                                     {#if selectedPages.includes(id)}
-                                        <div class="absolute inset-0 bg-orange-400 opacity-20 rounded"></div>
-                                        <div class="absolute -top-3 -right-3 h-8 w-8 bg-orange-500 rounded-full flex items-center justify-center text-white border-2 border-white font-bold">✓</div>
+                                        <div class="absolute -top-3 -right-3 w-7 h-7 bg-orange-500 rounded-full flex items-center justify-center text-white border-2 border-white shadow-md z-10">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                            </svg>
+                                        </div>
                                     {/if}
                                 </button>
                             {/each}
                         </div>
-
-                        <button 
-                            class="btn btn-sm btn-circle bg-orange-500 hover:bg-orange-600 text-white border-none disabled:bg-gray-300"
-                            onclick={goToNextPage}
-                            disabled={currentPaginationPage === totalPaginationPages - 1}>
-                            ❯
-                        </button>
-                    </div>
-
-                    <div class="flex justify-center gap-2 mt-6">
-                        {#each paginationIndices as pageIndex (pageIndex)}
-                            <button
-                                class="w-2.5 h-2.5 rounded-full transition-all duration-300 {currentPaginationPage === pageIndex ? 'bg-orange-500 w-6' : 'bg-gray-300 hover:bg-gray-400'}"
-                                onclick={() => currentPaginationPage = pageIndex}
-                                aria-label="ไปยังหน้า {pageIndex + 1}">
-                            </button>
-                        {/each}
+				    </div>
+                    <div class="mt-8 bg-blue-50 border-2 border-blue-300 rounded-lg p-6 text-center font-semibold shadow-inner">
+                        <p class="text-lg text-blue-900">หน้าที่เลือก : <span class="text-blue-700">{selectedPages.length === 0 ? 'ยังไม่ได้เลือกหน้า' : selectedPages.join(', ')}</span></p>
                     </div>
                 </div>
 
-                <div class="mt-8 bg-blue-50 border-2 border-blue-300 rounded-lg p-6 text-center font-semibold shadow-inner">
-                    <p class="text-lg text-blue-900">หน้าตัวเลือก : <span class="text-blue-700">{selectedPages.length === 0 ? 'ยังไม่ได้เลือกหน้า' : selectedPages.join(', ')}</span></p>
-                </div>
-            </div>
                 <div class="max-w-6xl mx-auto flex justify-between gap-8 mt-10">
                     <button 
                         class="btn btn-outline w-full max-w-xl text-lg h-14 border-2 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-600 rounded-xl" 
@@ -347,12 +369,14 @@
                         ย้อนกลับ
                     </button>
                     <button 
-                        class="w-full max-w-xl text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors duration-300 cursor-pointer disabled:cursor-not-allowed disabled:hidden disabled:bg-gray-400 shadow-sm" 
-                        onclick={nextStep} 
-                        disabled={selectedPages.length !== 2}>
-                        ถัดไป
+                        class="w-full max-w-xl text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 shadow-sm"
+                        onclick={nextStep}
+                        disabled={selectedPages.length !== 2}
+                    >
+                        ถัดไป (เลือกแล้ว {selectedPages.length}/2)
                     </button>
                 </div>
+
         </section>
     {/if}
 
