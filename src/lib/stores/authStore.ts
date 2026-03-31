@@ -39,7 +39,7 @@ export const logoutAuth = async () => {
     try {
         await fetch(`${PUBLIC_API_URL}/auth/logout`, {
             method: 'POST', 
-            credentials: 'include' // สำคัญมาก! ต้องส่ง Cookie ไปให้ Backend ลบ
+            credentials: 'include' 
         });
 
         authStore.set({ isLoggedIn: false, user: null });

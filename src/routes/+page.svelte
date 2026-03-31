@@ -17,7 +17,6 @@
         destination: string;
     }
 
-	// เพิ่ม Interface สำหรับ API Response เพื่อหลีกเลี่ยงการใช้ 'any'
     interface ApiProject {
         project_id: string;
         title_th: string;
@@ -193,27 +192,30 @@
 					</div>
 
 					{#if cardsPopular.length > 1}
-                        <button
-                            onclick={prevPage}
-                            disabled={currentPage === 0}
-                            class="absolute left-2 md:left-4 top-[40%] -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border border-gray-200 text-orange-600 rounded-full shadow-lg transition-all duration-300 {currentPage === 0 ? 'opacity-0 pointer-events-none' : 'opacity-100 hover:bg-orange-50 hover:scale-110'}"
-                            aria-label="Previous slide"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 md:w-6 md:h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                            </svg>
-                        </button>
-                        
-                        <button
-                            onclick={nextPage}
-                            disabled={currentPage === cardsPopular.length - 1}
-                            class="absolute right-2 md:right-4 top-[40%] -translate-y-1/2 z-10 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border border-gray-200 text-orange-600 rounded-full shadow-lg transition-all duration-300 {currentPage === cardsPopular.length - 1 ? 'opacity-0 pointer-events-none' : 'opacity-100 hover:bg-orange-50 hover:scale-110'}"
-                            aria-label="Next slide"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 md:w-6 md:h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                            </svg>
-                        </button>
+                        <div class="absolute top-[40%] -translate-y-1/2 w-full px-0 md:-px-4 pointer-events-none z-10">
+                            
+                            <button
+                                onclick={prevPage}
+                                disabled={currentPage === 0}
+                                class="absolute left-0 md:-left-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border border-gray-200 text-orange-600 rounded-full shadow-lg disabled:opacity-0 disabled:cursor-not-allowed hover:bg-orange-50 hover:scale-110 transition-all pointer-events-auto"
+                                aria-label="Previous slide"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                                </svg>
+                            </button>
+                            
+                            <button
+                                onclick={nextPage}
+                                disabled={currentPage === cardsPopular.length - 1}
+                                class="absolute right-0 md:-right-6 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white border border-gray-200 text-orange-600 rounded-full shadow-lg disabled:opacity-0 disabled:cursor-not-allowed hover:bg-orange-50 hover:scale-110 transition-all pointer-events-auto"
+                                aria-label="Next slide"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                </svg>
+                            </button>
+                        </div>
                     {/if}
 
 					<!-- Pagination Dots -->

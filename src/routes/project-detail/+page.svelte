@@ -164,28 +164,34 @@
             }
 
             try {
-                const response = await fetch(`${PUBLIC_API_URL}/project/${projectId}`);
+                const response = await fetch(`${PUBLIC_API_URL}/project/details/${projectId}`);
                 if (!response.ok) throw new Error(`Failed to fetch project details: ${response.statusText}`);
 
-                const data = await response.json();
+                const rawData = await response.json();
+                const data = Array.isArray(rawData) ? rawData[0] : rawData;
+
+                if (!data) {
+                    isError = true;
+                    return;
+                }
 
                 projectData = {
                     titleTH: data.title_th || '-',
                     titleEN: data.title_en || '-',
-                    faculty: data.faculty || '-',
-                    department: data.department || '-',
-                    degree: data.degree || '-',
-                    year: data.year || '-',
-                    authorTH: data.author_th || [],
-                    authorEN: data.author_en || [],
-                    advisorTH: data.advisor_th || [],
-                    advisorEN: data.advisor_en || [],
+                    faculty: data.faculty?.faculty_name_th || '-',
+                    department: data.department?.department_name_th || '-',
+                    degree: data.degree?.degree_name_th || '-',
+                    year: data.academic_year || '-',
+                    authorTH: data.authors ? data.authors.map((a: any) => a.user_name_th) : [],
+                    authorEN: data.authors ? data.authors.map((a: any) => a.user_name_en) : [],
+                    advisorTH: data.advisor?.advisor_name_th ? [data.advisor.advisor_name_th] : [],
+                    advisorEN: data.advisor?.advisor_name_en ? [data.advisor.advisor_name_en] : [],
                     abstractTH: data.abstract_th || 'ไม่มีข้อมูลบทคัดย่อภาษาไทย',
                     abstractEN: data.abstract_en || 'No English abstract available',
-                    keywordTH: data.keyword_th?.map((k: any) => k.keyword_th) || [],
-                    keywordEN: data.keyword_en?.map((k: any) => k.keyword_en) || [],
-                    downloads: data.downloads || 0,
-                    thumbnail: data.thumbnail || 'https://via.placeholder.com/400x300?text=No+Image'
+                    keywordTH: data.keywords ? data.keywords.map((k: any) => k.keyword_text_th) : [],
+                    keywordEN: data.keywords ? data.keywords.map((k: any) => k.keyword_text_en) : [],
+                    downloads: data.downloaded_count || 0,
+                    thumbnail: data.project_file?.thumbnail_path || 'https://placehold.co/300x400'
                 };
             } catch (error) {
                 console.error('Error fetching:', error);
@@ -207,7 +213,6 @@
     let currentKeywords = $derived(currentLang === 'TH' ? (projectData?.keywordTH || []) : (projectData?.keywordEN || []));
 
     const tocItems: TocItem[] = $derived([
-        { id: 'thumbnails', label: 'ตัวอย่างเอกสาร' },
         { id: 'abstract', label: currentLabels.abstract },
         { id: 'keywords', label: currentLabels.keywords },
         { id: 'authors', label: currentLabels.authors },
