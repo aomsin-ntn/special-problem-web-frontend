@@ -36,6 +36,21 @@
 
 }
 
+@layer base {
+
+    .step-primary::after, 
+    .step-primary::before {
+        background-color: var(--color-orange-500) !important; 
+        color: white !important;
+    }
+    
+    .step:not(.step-primary)::after,
+    .step:not(.step-primary)::before {
+        background-color: var(--color-gray-500) !important; 
+        color: white !important;
+    }
+}
+
 body {
     font-family: 'Prompt', sans-serif;
 }

@@ -2,8 +2,9 @@
     import { UserRound, CalendarDays } from 'lucide-svelte';
 
     interface Props {
+        id?: string;
         faculty?: string;
-        major?: string;
+        department?: string;
         titleThai?: string;
         titleEnglish?: string;
         author?: string[];
@@ -13,8 +14,9 @@
     }
 
     let {
-        faculty = "คณะวิทยาศาสตร์",
-        major = "คณิตศาสตร์",
+        id = '1',
+        faculty = "วิทยาศาสตร์",
+        department = "วิชาคณิตศาสตร์",
         titleThai = "ชื่อโปรเจคภาษาไทย",
         titleEnglish = "ชื่อโปรเจคภาษาอังกฤษ",
         author = [],
@@ -22,18 +24,21 @@
         semester = "ปีการศึกษา 2567",
         keywords = []
     }: Props = $props();
-    
+
 </script>
 
-<div class="w-full bg-white rounded-xl border border-gray-200 shadow-md p-4 flex flex-wrap gap-6 
-            hover:scale-101 transition-transform duration-300 cursor-pointer">
+<a
+    href={`/project-detail?id=${id}`}
+    class="w-full bg-white rounded-xl border border-gray-200 shadow-md p-4 flex flex-wrap gap-6 
+            hover:scale-101 transition-transform duration-300 cursor-pointer hover:shadow-lg"
+>
 
-    <img src="https://placehold.co/165x250" alt="Project Thumbnail"/>
+    <img src="https://placehold.co/165x260" alt="Project Thumbnail" class="h-full rounded-lg "/>
 
-    <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-4 justify-center items-start text-start py-2">
         <div class="flex gap-2">
-            <div class="badge badge-outline border-orange-100 text-orange-100">{faculty}</div>
-            <div class="badge badge-outline border-orange-700 text-orange-700">{major}</div>
+            <div class="badge badge-outline border-orange-100 text-orange-100">คณะ{faculty}</div>
+            <div class="badge badge-outline border-orange-700 text-orange-700">ภาควิชา{department}</div>
         </div>
 
         <p class="text-black line-clamp-2 text-ellipsis text-sm md:text-base lg:text-base font-medium">
@@ -44,7 +49,7 @@
         </p>
 
         <div class="w-full flex flex-wrap gap-20">
-            <div class="flex flex-col gap-4">
+            <div class="flex flex-col gap-2">
                 {#each author as authorName, index (index)}
                     <p class="text-black truncate text-sm md:text-sm lg:text-sm font-light flex items-center gap-2">
                         <UserRound class="w-4 h-4" /><span>{authorName}</span>
@@ -62,14 +67,14 @@
         </div>
 
         <p class="text-black truncate text-sm md:text-sm lg:text-sm font-light flex items-center gap-2">
-            <CalendarDays class="w-4 h-4" /><span>{semester}</span>
+            <CalendarDays class="w-4 h-4" /><span>ปีการศึกษา {semester}</span>
         </p>
         
         <div class="flex flex-wrap gap-4">
             {#each keywords as keyword, index (index)}
-                <div class="badge bg-pink-100 border-pink-100 text-pink-500">{keyword}</div>
+                <div class="badge bg-orange-200 border-orange-200 text-orange-100">{keyword}</div>
             {/each}
         </div>
     </div>
     
-</div>
+</a>

@@ -7,21 +7,24 @@
     }
 
     interface Faculty extends Option {
-        majors: Option[];
+        departments: Option[];
     }
 
     interface Props {
         faculties?: Faculty[];
+        selectedYears?: string[];
+        selectedDepartments?:string[];
     }
 
-    let { faculties = [] }: Props = $props();
-
-    let selectedYears = $state<string[]>([]);
-    let selectedMajors = $state<string[]>([]);
+    let {
+        faculties = [],
+        selectedYears = $bindable([]),
+        selectedDepartments = $bindable([])
+    }: Props = $props(); 
 
     let openSections = $state<Record<string, boolean>>({
         year: true,
-        facultyMajor: true,
+        facultyDepartment: true,
     });
 
     let openFaculties = $state<Record<string, boolean>>({});
@@ -41,27 +44,27 @@
         openFaculties[facultyId] = !openFaculties[facultyId];
     }
 
-    function isAllMajorsSelected(faculty: Faculty): boolean {
-        return faculty.majors.length > 0 && faculty.majors.every(m => selectedMajors.includes(m.id));
+    function isAllDepartmentsSelected(faculty: Faculty): boolean {
+        return faculty.departments.length > 0 && faculty.departments.every(d => selectedDepartments.includes(d.id));
     }
 
-    function isSomeMajorsSelected(faculty: Faculty): boolean {
-        const count = faculty.majors.filter(m => selectedMajors.includes(m.id)).length;
-        return count > 0 && count < faculty.majors.length;
+    function isSomeDepartmentsSelected(faculty: Faculty): boolean {
+        const count = faculty.departments.filter(d => selectedDepartments.includes(d.id)).length;
+        return count > 0 && count < faculty.departments.length;
     }
 
-    function toggleAllMajors(faculty: Faculty, checked: boolean) {
-        const majorIds = faculty.majors.map(m => m.id);
+    function toggleAllDepartments(faculty: Faculty, checked: boolean) {
+        const departmentIds = faculty.departments.map(d => d.id);
         if (checked) {
-            selectedMajors = [...new Set([...selectedMajors, ...majorIds])];
+            selectedDepartments = [...new Set([...selectedDepartments, ...departmentIds])];
         } else {
-            selectedMajors = selectedMajors.filter(id => !majorIds.includes(id));
+            selectedDepartments = selectedDepartments.filter(id => !departmentIds.includes(id));
         }
     }
 
     function resetAll() {
         selectedYears = [];
-        selectedMajors = [];
+        selectedDepartments = [];
     }
 </script>
 
@@ -95,12 +98,12 @@
         <hr class="border-gray-600" />
 
         <div class="filter-group">
-            <button onclick={() => toggleSection('facultyMajor')} class="section-trigger cursor-pointer">
+            <button onclick={() => toggleSection('facultyDepartment')} class="section-trigger cursor-pointer">
                 <span>คณะ - สาขาวิชา</span>
-                {@render toggleIcon(openSections.facultyMajor)}
+                {@render toggleIcon(openSections.facultyDepartment)}
             </button>
 
-            {#if openSections.facultyMajor}
+            {#if openSections.facultyDepartment}
                 <div class="space-y-1">
                     {#if faculties.length === 0}
                         <p class="text-sm text-gray-400 italic px-1">กำลังโหลด...</p>
@@ -117,22 +120,22 @@
                                         <label class="flex items-center gap-2 py-1 cursor-pointer group">
                                             <input
                                                 type="checkbox"
-                                                checked={isAllMajorsSelected(faculty)}
-                                                indeterminate={isSomeMajorsSelected(faculty)}
-                                                onchange={(e) => toggleAllMajors(faculty, e.currentTarget.checked)}
+                                                checked={isAllDepartmentsSelected(faculty)}
+                                                indeterminate={isSomeDepartmentsSelected(faculty)}
+                                                onchange={(e) => toggleAllDepartments(faculty, e.currentTarget.checked)}
                                                 class="w-4 h-4 rounded border-gray-300 accent-black cursor-pointer"
                                             />
                                             <span class="text-gray-700 text-sm font-medium group-hover:text-black transition-colors">สาขาทั้งหมด</span>
                                         </label>
-                                        {#each faculty.majors as major}
+                                        {#each faculty.departments as department}
                                             <label class="flex items-center gap-2 py-1 cursor-pointer group">
                                                 <input
                                                     type="checkbox"
-                                                    value={major.id}
-                                                    bind:group={selectedMajors}
+                                                    value={department.id}
+                                                    bind:group={selectedDepartments}
                                                     class="w-4 h-4 rounded border-gray-300 accent-black cursor-pointer"
                                                 />
-                                                <span class="text-gray-700 text-sm group-hover:text-black transition-colors">{major.label}</span>
+                                                <span class="text-gray-700 text-sm group-hover:text-black transition-colors">{department.label}</span>
                                             </label>
                                         {/each}
                                     </div>

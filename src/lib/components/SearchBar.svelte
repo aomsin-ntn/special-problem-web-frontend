@@ -1,24 +1,38 @@
 <script lang="ts">
     import { goto } from '$app/navigation';
+    import {page} from '$app/state';
 
     interface Props {
         value?: string;
         placeholder?: string;
     }
 
-    let { value = $bindable(""), placeholder = "ค้นหาชื่อปัญหาพิเศษ หรือรหัสนักศึกษาผู้จัดทำ.." }: Props = $props();
+    let {
+        value = $bindable(""),
+        placeholder = "ค้นหาชื่อปัญหาพิเศษ หรือรหัสนักศึกษาผู้จัดทำ.."
+    }: Props = $props();
 
-    function handleSubmit(e: SubmitEvent): void {
-        e.preventDefault();
-        const trimmedValue = value.trim();
-        if (!trimmedValue) return;
-        goto(`/search?q=${encodeURIComponent(trimmedValue)}`);
-    }
+    $effect(() => {
+        const q = page.url.searchParams.get('q');
+        if (q !== null) {
+            value = q;
+        }
+    });
+
+    const handleSearch = (event: SubmitEvent) => {
+        event.preventDefault();
+
+        const trimmedQuery = value.trim();
+        if (trimmedQuery) {
+            goto(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+        } else {
+            value = '';
+        }
+    };
 
 </script>
 
-<form onsubmit={handleSubmit} 
-    class="relative w-full max-w-2xl flex items-center gap-2 group ">
+<form onsubmit={handleSearch} class="relative w-full max-w-2xl flex items-center gap-2 group ">
 
     <div class="relative flex-1">
         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
