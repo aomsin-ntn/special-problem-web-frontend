@@ -158,7 +158,7 @@
             formData.append('file', uploadedFile as File);
             formData.append('selected_pages', JSON.stringify(sortedPages));
 
-            const response = await fetch(`${PUBLIC_API_URL}/project/ocr`, {
+            const response = await fetch(`${PUBLIC_API_URL}/project/upload`, {
                 method: 'POST',
                 body: formData
             });

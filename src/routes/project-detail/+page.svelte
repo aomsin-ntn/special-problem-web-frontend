@@ -191,7 +191,7 @@
                     keywordTH: data.keywords ? data.keywords.map((k: any) => k.keyword_text_th) : [],
                     keywordEN: data.keywords ? data.keywords.map((k: any) => k.keyword_text_en) : [],
                     downloads: data.downloaded_count || 0,
-                    thumbnail: data.project_file?.thumbnail_path || 'https://placehold.co/300x400'
+                    thumbnail: data.project_file?.thumbnail_path 
                 };
             } catch (error) {
                 console.error('Error fetching:', error);
@@ -211,6 +211,10 @@
     let currentAdvisors = $derived(currentLang === 'TH' ? (projectData?.advisorTH || []) : (projectData?.advisorEN || []));
     let currentAbstract = $derived(currentLang === 'TH' ? (projectData?.abstractTH || '') : (projectData?.abstractEN || ''));
     let currentKeywords = $derived(currentLang === 'TH' ? (projectData?.keywordTH || []) : (projectData?.keywordEN || []));
+
+    $effect(() => {
+        console.log(projectData);
+    });
 
     const tocItems: TocItem[] = $derived([
         { id: 'abstract', label: currentLabels.abstract },

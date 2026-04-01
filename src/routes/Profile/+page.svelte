@@ -27,61 +27,47 @@
 		advisors: string[];
 		academicYear: string;
 		keywords: string[];
-	}
-
-	interface ApiUserProject {
-		projectId: string;
-		titleThai: string;
-		titleEnglish: string;
-		facultyName: string;
-		departmentName: string;
-		authors?: { author_name_th: string }[];
-		advisors?: { advisor_name_th: string }[];
-		academicYear: string;
-		keywords?: { keyword_text_th: string }[];
+		thumbnail?: string | null;
 	}
 
 	let profileData = $state<StudentProfile | null>(null);
 	let userProjects: UserProject[] = $state([]);
 	let isLoading = $state(true);
-/*
-	let profileData = $state<StudentProfile>({
-		studentIdText: '65050702',
-		studentName: 'ภูมิพิรัฐ รักษากิจ', 
-		programText: 'วิทยาศาสตร์บัณฑิต (วิทยาการคอมพิวเตอร์)', 
-		faculty: 'วิทยาศาสตร์', 
-		department: 'วิทยาการคอมพิวเตอร์', 
-		email: '65050702@kmitl.ac.th',
-	});
-*/
+
 	$effect(() => {
 		const fetchProfileAndProject = async () => {
 			isLoading = true;
 			try {
-				const profileRes = await fetch(`${PUBLIC_API_URL}/api/users`, {
+				const profileRes = await fetch(`${PUBLIC_API_URL}/auth/me`, {
 					credentials: 'include' 
 				});
 				if (profileRes.ok) {
 					profileData = await profileRes.json();
 				}
 
-				const projectRes = await fetch(`${PUBLIC_API_URL}/api/users/project`, {
-					credentials: 'include'
-				});
-				if (projectRes.ok) {
-					//userProject = await projectRes.json();
-					const data: ApiUserProject[] = await projectRes.json();
-                    userProjects = data.map((project) => ({
-                        projectId: project.projectId,
-                        titleThai: project.titleThai,
-                        titleEnglish: project.titleEnglish,
-                        facultyName: project.facultyName,
-                        departmentName: project.departmentName,
-                        authors: project.authors ? project.authors.map((a) => a.author_name_th) : [],
-                        advisors: project.advisors ? project.advisors.map((a) => a.advisor_name_th) : [],
-						academicYear: project.academicYear,
-                        keywords: project.keywords ? project.keywords.map((k) => k.keyword_text_th) : []
-					}));
+				if (profileData?.studentId) {
+					const projectRes = await fetch(`${PUBLIC_API_URL}/project/?search=${profileData?.studentId}&order=asc`, {
+						credentials: 'include'
+					});
+
+					if (projectRes.ok) {
+						const responseData = await projectRes.json();
+						const data = responseData.data || [];
+
+						userProjects = data.map((item: any) => ({
+							projectId: item.project.project_id,
+							titleThai: item.project.title_th,
+							titleEnglish: item.project.title_en,
+							facultyName: item.faculty?.faculty_name_th || "-",
+							departmentName: item.department?.department_name_th || "-",
+							authors: item.users?.map((u: any) => u.user_name_th) || [],
+							advisors: item.advisors?.map((a: any) => a.advisor_name_th) || [],
+							academicYear: item.project.academic_year,
+							keywords: item.keywords?.map((k: any) => k.keyword_text_th) || [],
+							thumbnail: item.project.thumbnail || null
+						}));
+						console.log(userProjects);
+					}
 				}
 			} catch (error) {
 				console.error('Error fetching profile data:', error);
@@ -99,7 +85,7 @@
 
 </script>
 
-<div class="bg-white min-h-screen">
+<div class="bg-white min-h-screen text-black">
 	<div class="container mx-auto py-12 max-w-6xl">
 		
 		<section class="mb-16">
@@ -113,11 +99,11 @@
 				<div class="flex flex-col gap-4 mb-8 border-2 border-black bg-white rounded-3xl p-9 shadow-sm">
 					<p class="text-sm md:text-sm lg:text-sm font-light">{formatValue(profileData?.studentId)}</p>
 					<p class="text-base md:text-lg lg:text-xl font-semibold">{formatValue(profileData?.studentName)}</p>
-					<p class="text-sm md:text-base lg:text-base font-normal">หลักสูตร <span class="font-semibold">{formatValue(profileData?.degree)}</span></p>
+					<p class="text-sm md:text-base lg:text-base font-semibold">หลักสูตร <span class="font-normal">{formatValue(profileData?.degree)}</span></p>
 
-					<div class="flex flex-wrap gap-x-16 gap-y-2 mb-4 text-sm md:text-base lg:text-base font-normal">
-						<div>คณะ <span class="font-semibold">{formatValue(profileData?.faculty)}</span></div>
-						<div>ภาควิชา <span class="font-semibold">{formatValue(profileData?.department)}</span></div>
+					<div class="flex flex-wrap gap-x-16 gap-y-2 mb-4 text-sm md:text-base lg:text-base font-semibold">
+						<div>คณะ <span class="font-normal">{formatValue(profileData?.faculty)}</span></div>
+						<div>ภาควิชา <span class="font-normal">{formatValue(profileData?.department)}</span></div>
 					</div>
 
 					<hr class="border-t border-black " />
@@ -133,13 +119,11 @@
 		<section>
 			<div class="flex items-center justify-between border-b border-black pb-6 mb-8">
 				<p class="text-xl md:text-2xl lg:text-3xl font-semibold">My Project</p>
-				{#if !userProjects.length}
-					<button 
-						onclick={handleUpload}
-						class="btn btn-md bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full px-8 shadow-sm border-none cursor-pointer">
-						Upload
-					</button>
-				{/if}
+				<button 
+					onclick={handleUpload}
+					class="btn btn-md bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full px-8 shadow-sm border-none cursor-pointer">
+					Upload
+				</button>
 			</div>
 
 			{#if isLoading}
@@ -148,7 +132,7 @@
 				</div>
 			{:else if userProjects.length}
 				{#each userProjects as userProject (userProject.projectId)}
-					<div class="w-full shrink-0 flex flex-col justify-center">
+					<div class="w-full shrink-0 flex flex-col justify-center mb-6">
 						<CardProjectDetail 
 							id={userProject.projectId}
 							faculty={userProject.facultyName}
@@ -159,11 +143,12 @@
 							advisor={userProject.advisors}
 							semester={userProject.academicYear}
 							keywords={userProject.keywords}
+							thumbnail={userProject.thumbnail}
 						/>
 					</div>
 				{/each}
 			{:else}
-				<div class="bg-gray-50 border border-gray-200 rounded-2xl">
+				<div class="bg-white">
 					<p class="text-center text-gray-400 p-12 italic text-lg md:text-xl font-semibold">
 						ไม่มีโปรเจคในขณะนี้ กดปุ่ม Upload เพื่อเพิ่มโปรเจคของคุณ.
 					</p>

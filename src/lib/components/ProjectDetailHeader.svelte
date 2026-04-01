@@ -9,6 +9,7 @@
         degree: string;
         year: string;
         downloads: number;
+        thumbnail?: string;
     }
 
     interface Props {
@@ -28,9 +29,9 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 align-items-center">
             <div class="md:col-span-1">
                 <img
-                    src="https://placehold.co/300x400"
+                    src={"http://localhost:8000" + project.thumbnail || "https://placehold.co/300x400"}
                     alt="Project Thumbnail"
-                    class="h-full rounded-lg shadow-md object-cover"
+                    class="h-full rounded-lg shadow-md object-cover w-75"
                 />
             </div>
             <div class="md:col-span-2 flex flex-col gap-2">
