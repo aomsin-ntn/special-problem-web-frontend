@@ -25,178 +25,28 @@
     const searchTerm = $derived(page.url.searchParams.get('q') ?? '');
     
     // Sorting state
-    let sortBy = $state<string>('newest');
+    let sortBy = $state<string>('downloaded_count-desc');
     let isDropdownOpen = $state<boolean>(false);
     let currentPage = $state<number>(1);
     const itemsPerPage = 10;
+
     let selectedYears = $state<string[]>([]);
     let selectedDepartments = $state<string[]>([]);
 
-    const sortOptions: SortOption[] = [
-        { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'newest' },
-        { label: 'เรียงตามอัปโหลดเก่า > ใหม่', value: 'oldest' },
-        { label: 'เรียงตามดาวน์โหลดมากที่สุด', value: 'most-downloads' },
-        { label: 'เรียงตามดาวน์โหลดน้อยที่สุด', value: 'least-downloads' },
-    ];
-
-    const mockProjects = [
-        {
-            id: '1',
-            faculty: "คณะวิทยาศาสตร์",
-            department: "สาขาวิทยาการคอมพิวเตอร์",
-            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            semester: "ปีการศึกษา 2567",
-            titleThai: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง",
-            titleEnglish: "Development of a Book Recommendation System Using Machine Learning Techniques",
-            keywords: ["ระบบแนะนำหนังสือ", "การเรียนรู้ของเครื่อง", "การประมวลผลภาษาธรรมชาติ"],
-            uploadDate: new Date('2024-01-15'),
-            downloads: 150
-        },
-        {
-            id: '2',
-            faculty: "คณะบริหารธุรกิจ",
-            department: "สาขาการตลาด",
-            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            semester: "ปีการศึกษา 2568",
-            titleThai: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย",
-            titleEnglish: "Sentiment Analysis of Customer Reviews on Social Media",
-            keywords: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
-            uploadDate: new Date('2024-02-20'),
-            downloads: 200
-        },
-        {
-            id: '3',
-            faculty: "คณะวิศวกรรมศาสตร์",
-            department: "สาขาวิศวกรรมคอมพิวเตอร์",
-            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            semester: "ปีการศึกษา 2569",
-            titleThai: "ระบบตรวจจับความผิดปกติโดยใช้การเรียนรู้เชิงลึก",
-            titleEnglish: "Anomaly Detection System Using Deep Learning",
-            keywords: ["การตรวจจับความผิดปกติ", "เรียนรู้เชิงลึก", "โครงข่ายประสาทเทียม"],
-            uploadDate: new Date('2024-03-10'),
-            downloads: 120
-        },
-        {
-            id: '4',
-            faculty: "คณะวิทยาศาสตร์",
-            department: "สาขาวิทยาการคอมพิวเตอร์",
-            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            semester: "ปีการศึกษา 2567",
-            titleThai: "การพยากรณ์ราคาหุ้นด้วยเครือข่ายประสาทเทียม",
-            titleEnglish: "Stock Price Prediction Using Neural Networks",
-            keywords: ["พยากรณ์ราคา", "เครือข่ายประสาทเทียม", "ตลาดหุ้น"],
-            uploadDate: new Date('2024-01-05'),
-            downloads: 300
-        },
-        {
-            id: '5',
-            faculty: "คณะวิทยาศาสตร์",
-            department: "สาขาวิทยาการคอมพิวเตอร์",
-            author: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            advisor: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            semester: "ปีการศึกษา 2567",
-            titleThai: "ระบบจดจำรูปภาพใบหน้าขั้นสูง",
-            titleEnglish: "Advanced Facial Recognition System",
-            keywords: ["จดจำใบหน้า", "การประมวลผลภาพ", "การรักษาความปลอดภัย"],
-            uploadDate: new Date('2024-02-14'),
-            downloads: 85
-        },
-    ];
-
-    const mockFaculties: Faculty[] = [
-        {
-            id: 'eng',
-            label: 'คณะวิศวกรรมศาสตร์',
-            departments: [
-                { id: 'eng-cs', label: 'วิศวกรรมคอมพิวเตอร์' },
-                { id: 'eng-ee', label: 'วิศวกรรมไฟฟ้า' },
-                { id: 'eng-me', label: 'วิศวกรรมเครื่องกล' },
-                { id: 'eng-ce', label: 'วิศวกรรมโยธา' },
-                { id: 'eng-ie', label: 'วิศวกรรมอุตสาหการ' },
-            ],
-        },
-        {
-            id: 'sci',
-            label: 'คณะวิทยาศาสตร์',
-            departments: [
-                { id: 'sci-math', label: 'คณิตศาสตร์' },
-                { id: 'sci-physics', label: 'ฟิสิกส์' },
-                { id: 'sci-chem', label: 'เคมี' },
-                { id: 'sci-bio', label: 'ชีววิทยา' },
-                { id: 'sci-cs', label: 'วิทยาการคอมพิวเตอร์' },
-            ],
-        },
-        {
-            id: 'bus',
-            label: 'คณะบริหารธุรกิจ',
-            departments: [
-                { id: 'bus-acc', label: 'การบัญชี' },
-                { id: 'bus-fin', label: 'การเงิน' },
-                { id: 'bus-mkt', label: 'การตลาด' },
-                { id: 'bus-mgmt', label: 'การจัดการ' },
-            ],
-        },
-        {
-            id: 'arch',
-            label: 'คณะสถาปัตยกรรมศาสตร์',
-            departments: [
-                { id: 'arch-arch', label: 'สถาปัตยกรรม' },
-                { id: 'arch-id', label: 'การออกแบบภายใน' },
-                { id: 'arch-ud', label: 'การผังเมือง' },
-            ],
-        },
-    ];
-
     let faculties = $state<Faculty[]>([]);
+    let projects = $state<any[]>([]);
+    let isLoading = $state<boolean>(false);
 
-    // function to match project department with selected departments
-    function matches(project: typeof mockProjects[0]): boolean {
-        // Filter by year
-        if (selectedYears.length > 0) {
-            const projectYear = project.semester.match(/\d+/)?.[0];
-            if (!projectYear || !selectedYears.includes(projectYear)) return false;
-        }
-
-        // Filter by department
-        if (selectedDepartments.length > 0) {
-            const departmentLabels = selectedDepartments.map(id => 
-                mockFaculties.flatMap(f => f.departments).find(d => d.id === id)?.label
-            );
-            if (!departmentLabels.some(label => label && project.department.includes(label))) return false;
-        }
-
-        return true;
-    }
+    let totalItems = $state<number>(0);
+    let totalPages = $state<number>(1);
 
     // Filter and sort projects
-    const sortedProjects = $derived.by(() => {
-        const filtered = mockProjects.filter(matches);
-        
-        const sorted = [...filtered];
-        switch (sortBy) {
-            case 'newest':
-                return sorted.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
-            case 'oldest':
-                return sorted.sort((a, b) => new Date(a.uploadDate).getTime() - new Date(b.uploadDate).getTime());
-            case 'most-downloads':
-                return sorted.sort((a, b) => b.downloads - a.downloads);
-            case 'least-downloads':
-                return sorted.sort((a, b) => a.downloads - b.downloads);
-            default:
-                return sorted;
-        }
-    });
-
-    // Calculate pagination
-    const totalPages = $derived(Math.ceil(sortedProjects.length / itemsPerPage));
-    const paginatedProjects = $derived(sortedProjects.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    ));
+    const sortOptions: SortOption[] = [
+        { label: 'เรียงตามดาวน์โหลดมากที่สุด', value: 'downloaded_count-desc' },
+        { label: 'เรียงตามดาวน์โหลดน้อยที่สุด', value: 'downloaded_count-asc' },
+        { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'created_at-asc' },
+        { label: 'เรียงตามอัปโหลดเก่า > ใหม่', value: 'created_at-desc' },
+    ];
 
     // Get selected sort label
     const selectedSortLabel = $derived(sortOptions.find(opt => opt.value === sortBy)?.label || sortBy);
@@ -210,7 +60,7 @@
     function handleSort(value: string) {
         sortBy = value;
         isDropdownOpen = false;
-        currentPage = 1; // Reset to first page when sorting changes
+        currentPage = 1;
     }
 
     // Reset pagination when filters change
@@ -222,23 +72,70 @@
 
     // Handle page change
     function goToPage(pageNum: number) {
-        if (pageNum >= 1 && pageNum <= totalPages) {
+        if (pageNum >= 1) {
             currentPage = pageNum;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }
 
     onMount(async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/filters/faculties');
+            const response = await fetch(`${PUBLIC_API_URL}/project/get_faculty`);
             if (response.ok) {
-                faculties = await response.json();
-            } else {
-                faculties = mockFaculties;
+                const data = await response.json();
+                faculties = data.map((item: any) => ({
+                    id: item.faculty.faculty_id,
+                    label: item.faculty.faculty_name_th,
+                    departments: item.departments.map((d: any) => ({
+                        id: d.department_id, 
+                        label: d.department_name_th 
+                    }))
+                }));
             }
         } catch (e) {
-            console.warn('Backend unavailable, using mock data.');
-            faculties = mockFaculties;
+            console.error('Failed to fetch faculties from backend', e);
         }
+    });
+
+    $effect(() => {
+        const fetchProjects = async () => {
+            isLoading = true;
+            try {
+                const queryParams = new URLSearchParams();
+                
+                selectedDepartments.forEach(dept => queryParams.append('department', dept));
+                queryParams.append('page', currentPage.toString());
+                queryParams.append('limit', itemsPerPage.toString());
+                if (searchTerm) queryParams.append('search', searchTerm);
+                selectedYears.forEach(year => queryParams.append('year', year));
+                
+                const [sorted_by, order] = sortBy.split('-');
+                if (sorted_by && order) {
+                    queryParams.append('sorted_by', sorted_by);
+                    queryParams.append('order', order);
+                }
+
+                const response = await fetch(`${PUBLIC_API_URL}/project/?${queryParams.toString()}`);
+                if (response.ok) {
+                    const responseData = await response.json();
+                    projects = await responseData.data || [];
+                    totalItems = responseData.total_items || 0;
+                    totalPages = responseData.total_pages || 1;
+                    console.log(projects);
+                } else {
+                    projects = [];
+                    totalPages = 1;
+                }
+            } catch (error) {
+                console.error('Error fetching projects:', error);
+                projects = [];
+                totalPages = 1;
+            } finally {
+                isLoading = false;
+            }
+        };
+
+        fetchProjects();
     });
 </script>
 
@@ -266,7 +163,7 @@
                     <div class="flex justify-between items-center pb-2 pt-1 px-2">
                         <div>
                             <p class="text-black text-sm md:text-base">
-                                ผลลัพธ์การค้นหา (<span class="font-semibold text-orange-500">{sortedProjects.length}</span> รายการ)
+                                ผลลัพธ์การค้นหา (<span class="font-semibold text-orange-500">{projects.length}</span> รายการ)
                             </p>
                         </div>
                         
@@ -304,19 +201,26 @@
 
                     <!-- Project Cards -->
                     <div class="flex flex-col gap-4">
-                        {#each paginatedProjects as project (project.id)}
-                            <CardProjectDetail 
-                                id={project.id}
-                                faculty={project.faculty}
-                                department={project.department}
-                                author={project.author}
-                                advisor={project.advisor}
-                                semester={project.semester}
-                                titleThai={project.titleThai}
-                                titleEnglish={project.titleEnglish}
-                                keywords={project.keywords}
-                            />
-                        {/each}
+                        {#if isLoading}
+                            <div class="py-10 text-center text-gray-500">กำลังโหลดข้อมูล...</div>
+                        {:else if projects.length === 0}
+                            <div class="py-10 text-center text-gray-500">ไม่พบข้อมูลที่ค้นหา</div>
+                        {:else}
+                            {#each projects as item (item.project.project_id)}
+                                <CardProjectDetail 
+                                    id={item.project.project_id}
+                                    faculty={item.faculty?.faculty_name_th || "-"}
+                                    department={item.department?.department_name_th || "-"}
+                                    author={item.users?.map((u: any) => u.user_name_th)}
+                                    advisor={item.advisors?.map((a: any) => a.advisor_name_th)}
+                                    semester={item.project.academic_year}
+                                    titleThai={item.project.title_th}
+                                    titleEnglish={item.project.title_en}
+                                    keywords={item.keywords?.map((k: any) => k.keyword_text_th)}
+                                    thumbnail={item.project?.thumbnail || null}
+                                />
+                            {/each}
+                        {/if}
                     </div>
 
                     <!-- Pagination -->

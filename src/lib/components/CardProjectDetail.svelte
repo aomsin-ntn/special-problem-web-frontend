@@ -1,5 +1,6 @@
 <script lang="ts">
     import { UserRound, CalendarDays } from 'lucide-svelte';
+    import { PUBLIC_API_URL } from '$env/static/public';
 
     interface Props {
         id?: string;
@@ -11,18 +12,21 @@
         advisor?: string[];
         semester?: string;
         keywords?: string[];
+        thumbnail?: string | null;
     }
 
+    
     let {
         id = '1',
         faculty = "วิทยาศาสตร์",
-        department = "วิชาคณิตศาสตร์",
+        department = "คณิตศาสตร์",
         titleThai = "ชื่อโปรเจคภาษาไทย",
         titleEnglish = "ชื่อโปรเจคภาษาอังกฤษ",
         author = [],
         advisor = [],
-        semester = "ปีการศึกษา 2567",
-        keywords = []
+        semester = "2567",
+        keywords = [],
+        thumbnail = null,
     }: Props = $props();
 
 </script>
@@ -33,7 +37,7 @@
             hover:scale-101 transition-transform duration-300 cursor-pointer hover:shadow-lg"
 >
 
-    <img src="https://placehold.co/165x260" alt="Project Thumbnail" class="h-full rounded-lg "/>
+    <img src={thumbnail ? `${PUBLIC_API_URL}${thumbnail}` : "https://placehold.co/165x260"} alt="Project Thumbnail" class="h-full rounded-lg "/>
 
     <div class="flex flex-col gap-4 justify-center items-start text-start py-2">
         <div class="flex gap-2">

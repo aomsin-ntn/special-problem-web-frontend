@@ -73,7 +73,7 @@
             {/if}
         {/each}
 
-        {#if auth.isLoggedIn && auth.user}
+        {#if $authStore.isLoggedIn && $authStore.user}
             <li class="h-5 w-px bg-white"></li>
             <li class="relative" bind:this={dropdownRef}>
                 <button
@@ -81,7 +81,7 @@
                     class="flex items-center gap-2 hover:text-yellow-300 transition-colors cursor-pointer bg-none border-none p-0"
                 >
                     <User size={18} />
-                    <span>{auth.user?.email}</span>
+                    <span>{$authStore.user?.email}</span>
                 </button>
                 
                 {#if isDropdownOpen}
