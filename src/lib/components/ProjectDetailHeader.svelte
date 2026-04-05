@@ -26,7 +26,7 @@
         if (!isLoggedIn) return;
         isDownloading = true;
         try {
-            const response = await fetch(`${PUBLIC_API_URL}/project/download/${project.id}`, {
+            const response = await fetch(`${PUBLIC_API_URL}/project/download/file/${project.id}`, {
                 method: 'GET',
                 credentials: 'include'
             });

@@ -3,6 +3,7 @@
     import { FileText, Users, FileEdit, Tags, Plus, Trash2, X } from 'lucide-svelte';
 
     interface AuthorAdvisor {
+        StudentID?: string;
         name: string;
     }
 
@@ -26,6 +27,7 @@
         department: lang === 'th' ? 'สาขา' : 'Department',
         degree: lang === 'th' ? 'ปริญญา' : 'Degree',
         academicYear: lang === 'th' ? 'ปีการศึกษา' : 'Academic Year',
+        authors_id: lang === 'th' ? 'รหัสนักศึกษา' : 'Student ID',
         authors: lang === 'th' ? 'ผู้จัดทำ' : 'Author(s)',
         advisors: lang === 'th' ? 'อาจารย์ที่ปรึกษา' : 'Advisor(s)',
         abstract: lang === 'th' ? 'บทคัดย่อ' : 'Abstract',
@@ -35,7 +37,7 @@
     });
 
     const addAuthorAdvisor = (list: 'authors' | 'advisors') => {
-        data[list] = [...data[list], { name: '' }];
+        data[list] = [...data[list], { name: '', studentId: '' }];
     };
 
     const removeAuthorAdvisor = (list: 'authors' | 'advisors', index: number) => {
@@ -98,8 +100,9 @@
         <div class="flex flex-col gap-3">
             <div class="label"><span class="label-text font-semibold">{labels.authors}</span></div>
             {#each data.authors as author, index (index)}
-                <div class="flex items-center gap-2 w-full" transition:fly={{ y: -20 }}>
+                <div class="flex flex-col sm:flex-row items-center gap-2 w-full" transition:fly={{ y: -20 }}>
                     <input type="text" bind:value={author.name} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full grow bg-white text-sm md:text-base" />
+                    <input type="text" bind:value={author.studentId} placeholder="รหัสนักศึกษา" class="input input-bordered border-orange-500 focus:border-orange-500 focus:outline-orange-600 w-full sm:w-1/3 bg-white text-sm md:text-base" />
                     <button type="button" class="btn btn-outline btn-error h-11 w-11 p-0 rounded-xl shrink-0" onclick={() => removeAuthorAdvisor('authors', index)} disabled={data.authors.length === 1} aria-label="ลบผู้จัดทำ">
                         <Trash2 class="w-5 h-5" />
                     </button>

@@ -5,13 +5,14 @@
 <script lang="ts">
     import { Upload, FileCheckCorner, SquarePen, Loader2 } from 'lucide-svelte';
     import { goto } from '$app/navigation';
+    import { PUBLIC_API_URL } from '$env/static/public';
     import Abstract_th_page from '$lib/assets/Abstract_th_page.jpg';
     import Abstract_en_page from '$lib/assets/Abstract_en_page.jpg';
     import OcrForm from '$lib/components/OcrForm.svelte';
-    import { PUBLIC_API_URL } from '$env/static/public';
 
     // โครงสร้างข้อมูลชื่อบุคคล (ผู้จัดทำ/อาจารย์ที่ปรึกษา)
     interface AuthorAdvisor {
+        studentId?: string;
         name: string;
     }
 
@@ -123,14 +124,16 @@
 	};
 
 	let isLoadingOcr = $state(false);
+    let fileInfo = $state<{ file_path: string; save_name: string; thumbnail_path: string } | null>(null);
+    let degreeId = $state<string | null>(null);
+    let advisorId = $state<string | null>(null);
+
     let ocrDataThai = $state<ProjectData>({
         title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
     });
     let ocrDataEnglish = $state<ProjectData>({
         title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
     });
-
-    let currentProjectID = $state<string>('');
 
     // ส่งไฟล์และเลขหน้าที่เลือกไป OCR แล้ว map ผลลัพธ์เข้าฟอร์ม
     const extractOcrData = async () => {
@@ -146,39 +149,47 @@
 
             const response = await fetch(url, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
 
             if (!response.ok) throw new Error('Server responded failed with status ' + response.status);
 
             const data = await response.json();
+            
+            // เก็บ Metadata เผื่อนำไปใช้ตอน Save
+            fileInfo = data.file_info || null;
+            const form = data.form_data || {};
+            
+            degreeId = form.degree?.degree_id || null;
+            advisorId = form.advisor?.advisor_id || null;
 
-            currentProjectID = data.saved_as;
-            const th = data['fields-th'] || {};
+            // Map ใส่ฟอร์มภาษาไทย
             ocrDataThai = {
-                title: th.Title || '',
-                faculty: th.Faculty || '',
-                department: th.Department || '',
-                degree: th.Degree || '',
-                academicYear: th.AcademicYear || '',
-                authors: th.Name ? [{ name: th.Name }] : [], 
-                advisors: th.Advisor ? [{ name: th.Advisor }] : [],
-                abstract: th.Abstract || '',
-                keywords: th.Keywords ? th.Keywords.replace(/^:\s*/, '').split(',').map((k: string) => k.trim()).filter(Boolean) : []
+                title: form.title_th || '',
+                faculty: form.faculty?.faculty_name_th || '',
+                department: form.department?.department_name_th || '',
+                degree: form.degree?.degree_name_th || '',
+                academicYear: form.academic_year || '',
+                authors: (form.students || []).map((s: any) => ({ name: s.name_th || '', studentId: s.student_id || '' })),
+                advisors: form.advisor?.advisor_name_th ? [{ name: form.advisor.advisor_name_th }] : [],
+                abstract: form.abstract_th || '',
+                keywords: (form.keywords || []).map((k: any) => k.th || '')
             };
 
-            const en = data['fields-en'] || {};
+            // Map ใส่ฟอร์มภาษาอังกฤษ
             ocrDataEnglish = {
-                title: en.Title || '',
-                faculty: en.Faculty || '',
-                department: en.Department || '',
-                degree: en.Degree || '',
-                academicYear: en.AcademicYear || '',
-                authors: en.Name ? [{ name: en.Name }] : [],
-                advisors: en.Advisor ? [{ name: en.Advisor }] : [],
-                abstract: en.Abstract || '',
-                keywords: en.Keywords ? en.Keywords.replace(/^:\s*/, '').split(',').map((k: string) => k.trim()).filter(Boolean) : []
+                title: form.title_en || '',
+                faculty: form.faculty?.faculty_name_en || '',
+                department: form.department?.department_name_en || '',
+                degree: form.degree?.degree_name_en || '',
+                academicYear: form.academic_year || '',
+                authors: (form.students || []).map((s: any) => ({ name: s.name_en || '', studentId: s.student_id || '' })),
+                advisors: form.advisor?.advisor_name_en ? [{ name: form.advisor.advisor_name_en }] : [],
+                abstract: form.abstract_en || '',
+                keywords: (form.keywords || []).map((k: any) => k.en || '')
             };
+
         } catch (error) {
             console.error('OCR Error:', error);
             alert('OCR processing failed');
@@ -204,16 +215,77 @@
         event.preventDefault();
         isLoadingOcr = true;
         try {
-            if (!currentProjectID) throw new Error('ไม่พบรหัสโปรเจกต์อ้างอิง');
+            if (!fileInfo) throw new Error('ไม่พบข้อมูลไฟล์อ้างอิง');
+
+            // รวมข้อมูลนักศึกษาเข้าด้วยกัน (ป้องกันกรณีผู้ใช้เผลอลบรายชื่อในฟอร์มภาษาใดภาษาหนึ่ง)
+            const studentsPayload = [];
+            const maxAuthors = Math.max(ocrDataThai.authors.length, ocrDataEnglish.authors.length);
+            for(let i = 0; i < maxAuthors; i++) {
+                const thA = ocrDataThai.authors[i] || { name: '', studentId: '' };
+                const enA = ocrDataEnglish.authors[i] || { name: '', studentId: '' };
+                studentsPayload.push({
+                    student_id: thA.studentId || enA.studentId || '',
+                    student_name_th: thA.name,
+                    student_name_en: enA.name
+                });
+            }
+
+            const advisorsPayload = [];
+            const maxAdvisors = Math.max(ocrDataThai.advisors.length, ocrDataEnglish.advisors.length);
+            for(let i = 0; i < maxAdvisors; i++) {
+                const thA = ocrDataThai.advisors[i] || { name: ''};
+                const enA = ocrDataEnglish.advisors[i] || { name: ''};
+                advisorsPayload.push({
+                    advisor_id: advisorId,
+                    advisor_name_th: thA.name,
+                    advisor_name_en: enA.name
+                });
+            }
+
+            // รวม Keywords เข้าด้วยกัน
+            const keywordsPayload = [];
+            const maxKeywords = Math.max(ocrDataThai.keywords.length, ocrDataEnglish.keywords.length);
+            for(let i = 0; i < maxKeywords; i++) {
+                keywordsPayload.push({
+                    keyword_text_th: ocrDataThai.keywords[i] || '',
+                    keyword_text_en: ocrDataEnglish.keywords[i] || ''
+                });
+            }
+
+            // จัด Schema ตามที่ Backend คาดหวัง
             const projectPayload = {
-                thai: ocrDataThai,
-                english: ocrDataEnglish
+                title_th: ocrDataThai.title,
+                title_en: ocrDataEnglish.title,
+                abstract_th: ocrDataThai.abstract,
+                abstract_en: ocrDataEnglish.abstract,
+                academic_year: ocrDataThai.academicYear,
+                degree: {
+                    degree_id: degreeId,
+                    degree_name_th: ocrDataThai.degree,
+                    degree_name_en: ocrDataEnglish.degree
+                },
+                department: {
+                    department_id: null,
+                    department_name_th: ocrDataThai.department,
+                    department_name_en: ocrDataEnglish.department
+                },
+                faculty: {
+                    faculty_id: null,
+                    faculty_name_th: ocrDataThai.faculty,
+                    faculty_name_en: ocrDataEnglish.faculty
+                },
+                advisor: advisorsPayload,
+                students: studentsPayload,
+                keywords: keywordsPayload,
+                file_info: fileInfo
             };
 
-            const response = await fetch(`${PUBLIC_API_URL}/project/edit`, {
+            // เรียกเส้น /project/save
+            const response = await fetch(`${PUBLIC_API_URL}/project/save`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(projectPayload)
+                body: JSON.stringify(projectPayload),
+                credentials: 'include'
             });
 
             if (!response.ok) throw new Error('Failed to save project data: ' + response.status);
@@ -222,13 +294,13 @@
             currentStep = 1;
             uploadedFile = null;
             selectedPages = [];
-            currentProjectID = '';
+            fileInfo = null;
 
             await goto('/profile');
 
         } catch (error) {
             console.error('Save Error:', error);
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         } finally {
             isLoadingOcr = false;
         }
@@ -432,7 +504,7 @@
                                 <OcrForm bind:data={ocrDataThai} lang="th" />
                             </div>
                             
-                            <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-blue-50/30 shadow-sm">
+                            <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
                                 <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">3.2 ข้อมูลภาษาอังกฤษ</h3>
                                 <OcrForm bind:data={ocrDataEnglish} lang="en" />
                             </div>
