@@ -172,7 +172,7 @@
                 degree: form.degree?.degree_name_th || '',
                 academicYear: form.academic_year || '',
                 authors: (form.students || []).map((s: any) => ({ name: s.name_th || '', studentId: s.student_id || '' })),
-                advisors: form.advisor?.advisor_name_th ? [{ name: form.advisor.advisor_name_th }] : [],
+                advisors: (form.advisors || []).map((a: any) => ({ name: a.advisorname_th || ''})),
                 abstract: form.abstract_th || '',
                 keywords: (form.keywords || []).map((k: any) => k.th || '')
             };
@@ -185,7 +185,7 @@
                 degree: form.degree?.degree_name_en || '',
                 academicYear: form.academic_year || '',
                 authors: (form.students || []).map((s: any) => ({ name: s.name_en || '', studentId: s.student_id || '' })),
-                advisors: form.advisor?.advisor_name_en ? [{ name: form.advisor.advisor_name_en }] : [],
+                advisors: (form.advisors || []).map((a: any) => ({ name: a.advisorname_en || ''})),
                 abstract: form.abstract_en || '',
                 keywords: (form.keywords || []).map((k: any) => k.en || '')
             };
