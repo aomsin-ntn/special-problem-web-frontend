@@ -7,6 +7,7 @@
     import { PUBLIC_API_URL } from '$env/static/public';
 
     interface ProjectData {
+        id: string;
         titleTH: string;
         titleEN: string;
         faculty: string;
@@ -54,101 +55,6 @@
         }
     };
 
-    /*
-    const projectsDatabase: Record<string, ProjectData> = {
-        '1': {
-            titleTH: "การพัฒนาระบบแนะนำหนังสือโดยใช้เทคนิคการเรียนรู้ของเครื่อง",
-            titleEN: "Development of a Book Recommendation System Using Machine Learning Techniques",
-            faculty: "คณะวิทยาศาสตร์",
-            department: "สาขาวิทยาการคอมพิวเตอร์",
-            degree: "วิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
-            year: "2567",
-            authorTH: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            authorEN: ["Ms. Natchanan Sripanthawan", "Mr. Phumipirart Rakchai"],
-            advisorTH: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            advisorEN: ["Dr. Somchai Jaidee", "Dr. Napavarn Sangsawang"],
-            abstractTH: "โครงการนี้พัฒนาระบบแนะนำหนังสือที่มีประสิทธิภาพสูง โดยใช้เทคนิคการเรียนรู้ของเครื่องและการประมวลผลภาษาธรรมชาติเพื่อวิเคราะห์ความต้องการของผู้อ่าน",
-            abstractEN: "This project develops a high-performance book recommendation system using machine learning techniques and natural language processing to analyze reader preferences",
-            keywordTH: ["ระบบแนะนำหนังสือ", "การเรียนรู้ของเครื่อง", "การประมวลผลภาษาธรรมชาติ"],
-            keywordEN: ["Book Recommendation System", "Machine Learning", "Natural Language Processing"],
-            downloads: 150
-        },
-        '2': {
-            titleTH: "การวิเคราะห์ความรู้สึกในความคิดเห็นของลูกค้าเกี่ยวกับผลิตภัณฑ์บนโซเชียลมีเดีย",
-            titleEN: "Sentiment Analysis of Customer Reviews on Social Media",
-            faculty: "คณะบริหารธุรกิจ",
-            department: "สาขาการตลาด",
-            degree: "บริหารธุรกิจบัณฑิต (การตลาด)",
-            year: "2568",
-            authorTH: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            authorEN: ["Ms. Natchanan Sripanthawan", "Mr. Phumipirart Rakchai"],
-            advisorTH: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            advisorEN: ["Dr. Somchai Jaidee", "Dr. Napavarn Sangsawang"],
-            abstractTH: "ศึกษาการใช้ natural language processing เพื่อวิเคราะห์ความรู้สึกจากความเห็นของลูกค้าบนแพลตฟอร์มโซเชียลมีเดีย เพื่อให้องค์กรสามารถเข้าใจความพึงพอใจและข้อติเตียม",
-            abstractEN: "Study of natural language processing for sentiment analysis of customer opinions on social media platforms to understand customer satisfaction and feedback",
-            keywordTH: ["วิเคราะห์ความรู้สึก", "ความคิดเห็นของลูกค้า", "โซเชียลมีเดีย"],
-            keywordEN: ["Sentiment Analysis", "Customer Reviews", "Social Media"],
-            downloads: 200
-        },
-        '3': {
-            titleTH: "ระบบตรวจจับความผิดปกติโดยใช้การเรียนรู้เชิงลึก",
-            titleEN: "Anomaly Detection System Using Deep Learning",
-            faculty: "คณะวิศวกรรมศาสตร์",
-            department: "สาขาวิศวกรรมคอมพิวเตอร์",
-            degree: "วิศวกรรมศาสตรบัณฑิต (วิศวกรรมคอมพิวเตอร์)",
-            year: "2569",
-            authorTH: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            authorEN: ["Ms. Natchanan Sripanthawan", "Mr. Phumipirart Rakchai"],
-            advisorTH: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            advisorEN: ["Dr. Somchai Jaidee", "Dr. Napavarn Sangsawang"],
-            abstractTH: "พัฒนาระบบตรวจจับความผิดปกติที่มีประสิทธิภาพสูงโดยใช้เครือข่าย Autoencoder และ Convolutional Neural Networks เพื่อบันทึกและวิเคราะห์ข้อมูลที่ผิดปกติในเวลาจริง",
-            abstractEN: "Development of an efficient anomaly detection system using Autoencoder and Convolutional Neural Networks for real-time detection and analysis of abnormal data patterns",
-            keywordTH: ["การตรวจจับความผิดปกติ", "เรียนรู้เชิงลึก", "โครงข่ายประสาทเทียม"],
-            keywordEN: ["Anomaly Detection", "Deep Learning", "Neural Networks"],
-            downloads: 120
-        },
-        '4': {
-            titleTH: "การพยากรณ์ราคาหุ้นด้วยเครือข่ายประสาทเทียม",
-            titleEN: "Stock Price Prediction Using Neural Networks",
-            faculty: "คณะวิทยาศาสตร์",
-            department: "สาขาวิทยาการคอมพิวเตอร์",
-            degree: "วิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
-            year: "2567",
-            authorTH: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            authorEN: ["Ms. Natchanan Sripanthawan", "Mr. Phumipirart Rakchai"],
-            advisorTH: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            advisorEN: ["Dr. Somchai Jaidee", "Dr. Napavarn Sangsawang"],
-            abstractTH: "เสนอวิธีการพยากรณ์ราคาหุ้นโดยใช้เครือข่าย LSTM และ GRU เพื่อประมวลผลข้อมูลอนุกรมเวลา และให้ความสามารถในการทำนายแนวโน้มราคาหุ้นในอนาคต",
-            abstractEN: "Propose a method for stock price prediction using LSTM and GRU networks to process time series data and predict future stock price trends",
-            keywordTH: ["พยากรณ์ราคา", "เครือข่ายประสาทเทียม", "ตลาดหุ้น"],
-            keywordEN: ["Stock Prediction", "Neural Networks", "Stock Market"],
-            downloads: 300
-        },
-        '5': {
-            titleTH: "ระบบจดจำรูปภาพใบหน้าขั้นสูง",
-            titleEN: "Advanced Facial Recognition System",
-            faculty: "คณะวิทยาศาสตร์",
-            department: "สาขาวิทยาการคอมพิวเตอร์",
-            degree: "วิทยาศาสตรบัณฑิต (วิทยาการคอมพิวเตอร์)",
-            year: "2567",
-            authorTH: ["น.ส.ณัฏฐนันท์ ศรีพันธวานุสรณ์", "นายภูมิพิรัฐ รักษากิจ"],
-            authorEN: ["Ms. Natchanan Sripanthawan", "Mr. Phumipirart Rakchai"],
-            advisorTH: ["ดร.สมชาย ใจดี", "ดร.นภาวรรณ แสงสว่าง"],
-            advisorEN: ["Dr. Somchai Jaidee", "Dr. Napavarn Sangsawang"],
-            abstractTH: "พัฒนาระบบจดจำใบหน้าที่มีความแม่นยำสูงโดยใช้เทคนิค Face Detection และ Face Recognition เพื่อใช้ประโยชน์ในด้านความปลอดภัย การสำเร็จตัวตนและการจัดการเข้าออก",
-            abstractEN: "Development of an advanced facial recognition system using Face Detection and Face Recognition techniques for security, authentication, and access control applications",
-            keywordTH: ["จดจำใบหน้า", "การประมวลผลภาพ", "การรักษาความปลอดภัย"],
-            keywordEN: ["Facial Recognition", "Image Processing", "Security"],
-            downloads: 85
-        }
-    };
-    
-
-    const projectId = $derived(page.url.searchParams.get('id') || '1');
-    const projectData = $derived(projectsDatabase[projectId] || projectsDatabase['1']);
-
-    */
-
     let projectData = $state<ProjectData | null>(null);
     let isLoading = $state(true);
     let isError = $state(false);
@@ -176,6 +82,7 @@
                 }
 
                 projectData = {
+                    id: data.project_id || '',
                     titleTH: data.title_th || '-',
                     titleEN: data.title_en || '-',
                     faculty: data.faculty?.faculty_name_th || '-',
@@ -191,7 +98,7 @@
                     keywordTH: data.keywords ? data.keywords.map((k: any) => k.keyword_text_th) : [],
                     keywordEN: data.keywords ? data.keywords.map((k: any) => k.keyword_text_en) : [],
                     downloads: data.downloaded_count || 0,
-                    thumbnail: data.project_file?.thumbnail_path 
+                    thumbnail: data.project_file?.thumbnail_path || null
                 };
             } catch (error) {
                 console.error('Error fetching:', error);
@@ -212,10 +119,6 @@
     let currentAbstract = $derived(currentLang === 'TH' ? (projectData?.abstractTH || '') : (projectData?.abstractEN || ''));
     let currentKeywords = $derived(currentLang === 'TH' ? (projectData?.keywordTH || []) : (projectData?.keywordEN || []));
 
-    $effect(() => {
-        console.log(projectData);
-    });
-
     const tocItems: TocItem[] = $derived([
         { id: 'abstract', label: currentLabels.abstract },
         { id: 'keywords', label: currentLabels.keywords },
@@ -235,7 +138,7 @@
     {:else if isError || !projectData}
         <div class="flex flex-col h-screen items-center justify-center gap-4 text-center">
             <h2 class="text-2xl font-bold text-red-600">เกิดข้อผิดพลาด</h2>
-            <p class="text-gray-600">ไม่พบข้อมูลปัญหาพิเศษที่คุณต้องการ หรือระบบอาจมีปัญหา</p>
+            <p class="text-gray-400">ไม่พบข้อมูลปัญหาพิเศษที่คุณต้องการ หรือระบบอาจมีปัญหา</p>
             <a href="/" class="btn bg-orange-500 text-white hover:bg-orange-600 mt-4 border-none">กลับหน้าแรก</a>
         </div>
 

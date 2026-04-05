@@ -30,34 +30,28 @@
     const address: string = "1 Chalong Krung 1 Alley, Lat Krabang, Bangkok 10520, Thailand";
 </script>
 
-<footer class="bg-gray-300 text-white py-8 px-6 md:px-20 lg:px-30">
-    <div class="w-full mx-auto flex flex-row justify-between items-center gap-8">
+<footer class="bg-gray-300 text-white py-8 px-6 md:px-12 lg:px-20">
+    <div class="w-full max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center md:items-start gap-8 md:gap-12 text-center md:text-left">
         
-        <div class="flex flex-col gap-2">
-            <p class="text-sm md:text-sm lg:text-sm font-light">
-                {universityNameTh}
-            </p>
-            <p class="text-sm md:text-sm lg:text-sm font-light">
-                {universityNameEn}
-            </p>
+        <div class="flex flex-col gap-2 max-w-md">
+            <p class="text-sm md:text-base font-medium">{universityNameTh}</p>
+            <p class="text-sm md:text-base font-light">{universityNameEn}</p>
         </div>
 
-        <div class="flex flex-col gap-2 max-w-75">
-            <p class="text-sm md:text-base lg:text-base font-medium">
-                Contact us
-            </p>
+        <div class="flex flex-col gap-3 max-w-sm items-center md:items-start">
+            <p class="text-base md:text-lg font-semibold mb-1">Contact us</p>
             {#each contactDetails as contact (contact.label)}
                 {@const Icon = contact.icon}
-                <div class="flex gap-2">
-                    <Icon size={20} strokeWidth={2} />
-                    <a href={contact.link} class="hover:underline transition-all">
-                        <p class="text-sm md:text-sm lg:text-sm font-light">
-                            {contact.value}
-                        </p>
+                <div class="flex items-center gap-3">
+                    <Icon size={20} strokeWidth={2} class="shrink-0" />
+                    <a 
+                        href={contact.link} 
+                        class="hover:underline hover:text-orange-600 transition-all text-sm font-light">
+                        {contact.value}
                     </a>
                 </div>
             {/each}
-            <p class="text-sm md:text-sm lg:text-sm font-light">
+            <p class="text-sm font-light leading-relaxed">
                 {address}
             </p>
         </div>

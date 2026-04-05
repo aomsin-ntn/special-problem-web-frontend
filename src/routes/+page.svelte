@@ -4,6 +4,7 @@
 	import CardPopular from '$lib/components/CardProjectPopular.svelte';
 	import MenuCategory from '$lib/components/MenuCategory.svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
+	import { Menu } from 'lucide-svelte';
 
 	interface ProjectCard {
         id: string;
@@ -30,21 +31,7 @@
 	let touchEndX = 0;
 	let isTransitioning = $state(false);
 
-	const menuCategories: MenuCategoryItem[] = [
-		{ label: "คณะวิศวกรรมศาสตร์", destination: "/faculty/engineering" },
-		{ label: "คณะวิทยาศาสตร์", destination: "/faculty/science" },
-		{ label: "คณะสถาปัตยกรรมศาสตร์", destination: "/faculty/architecture" },
-		{ label: "คณะครุศาสตร์อุตสาหกรรมและเทคโนโลยี", destination: "/faculty/industrial-education" },
-		{ label: "คณะเทคโนโลยีสารสนเทศ", destination: "/faculty/information-technology" },
-		{ label: "คณะเทคโนโลยีการเกษตร", destination: "/faculty/agricultural-technology" },
-		{ label: "คณะอุตสาหกรรมอาหาร", destination: "/faculty/food-industry" },
-		{ label: "คณะบริหารธุรกิจ", destination: "/faculty/business" },
-		{ label: "คณะศิลปศาสตร์", destination: "/faculty/liberal-arts" },
-		{ label: "คณะแพทยศาสตร์", destination: "/faculty/medicine" },
-		{ label: "คณะทันตแพทยศาสตร์", destination: "/faculty/dentistry" },
-		{ label: "คณะพยาบาลศาสตร์", destination: "/faculty/Nursing" }
-	];
-
+	let menuCategories = $state<MenuCategoryItem[]>([]);
 	let isLoading = $state(true);
 
 	$effect(() => {
@@ -68,7 +55,25 @@
 				isLoading = false;
 			}
 		}
+
+		async function fetchMenuCategories() {
+			try {
+				const response = await fetch(`${PUBLIC_API_URL}/master/faculty`);
+				if (response.ok) {
+					const data = await response.json();
+					menuCategories = data.map((item: any) => ({
+						label: item.faculty_name_th,
+						destination: `/search?faculty=${item.faculty_id}`
+					}));
+				} else {
+					console.error('Failed to fetch menu categories:', response.status);
+				}
+			} catch (error) {
+				console.error('Error fetching menu categories:', error);
+			}
+		}
 		fetchPopularProjects();
+		fetchMenuCategories();
 	});
 
 	function handleTouchStart(e: TouchEvent) {
@@ -235,12 +240,13 @@
 		</div>
 	</section>
 
-	<section class="w-full bg-orange-700">
-		<div class="py-12 px-10 md:px-20 lg:px-30 flex flex-col gap-10">
-			<p class="text-white text-lg md:text-xl lg:text-2xl font-semibold">
+		<section class="w-full bg-orange-700">
+		<div class="max-w-7xl mx-auto py-12 px-6 md:px-12 lg:px-20 flex flex-col gap-8">
+			<h2 class="text-white text-xl md:text-2xl lg:text-3xl font-bold text-center md:text-left">
 				ค้นหาโดยคณะ
-			</p>
-			<div class="flex flex-wrap justify-between">
+			</h2>
+            
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
 				{#each menuCategories as menuCategory (menuCategory.destination)}
 					<MenuCategory 
 						label={menuCategory.label} 

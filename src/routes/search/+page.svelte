@@ -91,6 +91,14 @@
                         label: d.department_name_th 
                     }))
                 }));
+
+                const initialFacultyId = page.url.searchParams.get('faculty');
+                if (initialFacultyId) {
+                    const targetFaculty = faculties.find(f => f.id === initialFacultyId);
+                    if (targetFaculty) {
+                        selectedDepartments = targetFaculty.departments.map(d => d.id);
+                    }
+                }
             }
         } catch (e) {
             console.error('Failed to fetch faculties from backend', e);
@@ -121,7 +129,6 @@
                     projects = await responseData.data || [];
                     totalItems = responseData.total_items || 0;
                     totalPages = responseData.total_pages || 1;
-                    console.log(projects);
                 } else {
                     projects = [];
                     totalPages = 1;
@@ -217,7 +224,8 @@
                                     titleThai={item.project.title_th}
                                     titleEnglish={item.project.title_en}
                                     keywords={item.keywords?.map((k: any) => k.keyword_text_th)}
-                                    thumbnail={item.project?.thumbnail || null}
+                                    thumbnail={item.project_file?.thumbnail_path || null}
+                                    downloadCount={item.project.downloaded_count}
                                 />
                             {/each}
                         {/if}

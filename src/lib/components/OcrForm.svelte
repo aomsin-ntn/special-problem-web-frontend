@@ -1,8 +1,24 @@
 <script lang="ts">
-    import type { ProjectData, AuthorAdvisor } from '$lib/stores/types';
     import { fly } from 'svelte/transition';
+    import { FileText, Users, FileEdit, Tags, Plus, Trash2, X } from 'lucide-svelte';
 
-    let { data, lang = 'th' } = $props();
+    interface AuthorAdvisor {
+        name: string;
+    }
+
+    interface ProjectData {
+        title: string;
+        faculty: string;
+        department: string;
+        degree: string;
+        academicYear: string;
+        authors: AuthorAdvisor[];
+        advisors: AuthorAdvisor[];
+        abstract: string;
+        keywords: string[];
+    }
+
+    let { data = $bindable(), lang = 'th' } = $props();
 
     const labels = $derived({
         title: lang === 'th' ? 'ชื่อโครงงาน' : 'Project Title',
@@ -33,99 +49,136 @@
             newKeyword = '';
         }
     };
+    
     const removeKeyword = (index: number) => {
         data.keywords = data.keywords.filter((_: string, i: number) => i !== index);
     };
-
 </script>
 
-<div class="flex flex-col gap-6 font-sans">
-    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-6 bg-white">
-        <legend class="text-md font-bold text-black flex items-center gap-2 px-2"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"></path></svg>{labels.projectData}</legend>
+<div class="flex flex-col gap-6">
+    
+    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-4 md:p-6 bg-white">
+        <legend class="text-base md:text-lg font-bold text-black flex items-center gap-2 px-2">
+            <FileText class="w-5 h-5 text-orange-600" />
+            {labels.projectData}
+        </legend>
         
         <label class="form-control w-full">
             <div class="label"><span class="label-text font-semibold">{labels.title}</span></div>
-            <input type="text" bind:value={data.title} class="input input-bordered input-primary w-full bg-white" />
+            <textarea bind:value={data.title} class="textarea textarea-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 textarea-lg w-full h-48 bg-white text-sm md:text-base leading-relaxed" placeholder="{labels.title}..."></textarea>
         </label>
-        
-        <div class="grid grid-cols-2 gap-4">
-            <label class="form-control w-full">
-                <div class="label"><span class="label-text font-semibold">{labels.faculty}</span></div>
-                <input type="text" bind:value={data.faculty} class="input input-bordered input-primary w-full bg-white" />
-            </label>
-            <label class="form-control w-full">
-                <div class="label"><span class="label-text font-semibold">{labels.department}</span></div>
-                <input type="text" bind:value={data.department} class="input input-bordered input-primary w-full bg-white" />
-            </label>
-        </div>
-        
-        <div class="grid grid-cols-2 gap-4">
-            <label class="form-control w-full">
-                <div class="label"><span class="label-text font-semibold">{labels.degree}</span></div>
-                <input type="text" bind:value={data.degree} class="input input-bordered input-primary w-full bg-white" />
-            </label>
-            <label class="form-control w-full">
-                <div class="label"><span class="label-text font-semibold">{labels.academicYear}</span></div>
-                <input type="text" bind:value={data.academicYear} class="input input-bordered input-primary w-full bg-white" />
-            </label>
-        </div>
-    </fieldset>
 
-    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-6 bg-white">
-        <legend class="text-md font-bold text-black flex items-center gap-2 px-2"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>{labels.authors}/{labels.advisors}</legend>
-        
-        <div class="author-advisor-list flex flex-col gap-3">
-            <div class="label"><span class="label-text font-semibold">{labels.authors}</span></div>
-            {#each data.authors as author, index (index)}
-                <div class="input-add-remove flex items-center gap-2" transition:fly={{ y: -20 }}>
-                    <input type="text" bind:value={author.name} class="input input-bordered input-primary grow bg-white" />
-                    <button class="btn btn-outline btn-error h-12 w-12 p-0 rounded-full" onclick={() => removeAuthorAdvisor('authors', index)} disabled={data.authors.length === 1} aria-label="ลบผู้จัดทำ"><svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"></path></svg></button>
-                </div>
-            {/each}
-            <button class="btn btn-outline btn-primary btn-sm max-w-xs self-start" onclick={() => addAuthorAdvisor('authors')}><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg> เพิ่มผู้จัดทำ</button>
-        </div>
-        
-        <div class="author-advisor-list flex flex-col gap-3">
-            <div class="label"><span class="label-text font-semibold">{labels.advisors}</span></div>
-            {#each data.advisors as advisor, index (index)}
-                <div class="input-add-remove flex items-center gap-2" transition:fly={{ y: -20 }}>
-                    <input type="text" bind:value={advisor.name} class="input input-bordered input-primary grow bg-white" />
-                    <button class="btn btn-outline btn-error h-12 w-12 p-0 rounded-full" onclick={() => removeAuthorAdvisor('advisors', index)} disabled={data.advisors.length === 1} aria-label="ลบอาจารย์ที่ปรึกษา"><svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"></path></svg></button>
-                </div>
-            {/each}
-            <button class="btn btn-outline btn-primary btn-sm max-w-xs self-start" onclick={() => addAuthorAdvisor('advisors')}><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg> เพิ่มอาจารย์ที่ปรึกษา</button>
-        </div>
-    </fieldset>
+        <label class="form-control w-full">
+            <div class="label"><span class="label-text font-semibold">{labels.faculty}</span></div>
+            <input type="text" bind:value={data.faculty} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base" />
+        </label>
 
-    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-6 bg-white">
-        <legend class="text-md font-bold text-black flex items-center gap-2 px-2"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"></path></svg>{labels.abstractTitle}</legend>
+        <label class="form-control w-full">
+            <div class="label"><span class="label-text font-semibold">{labels.department}</span></div>
+            <input type="text" bind:value={data.department} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base" />
+        </label>
         
         <label class="form-control w-full">
-            <textarea bind:value={data.abstract} class="textarea textarea-bordered textarea-primary textarea-lg w-full h-48 bg-white" placeholder="{labels.abstract}..."></textarea>
+            <div class="label"><span class="label-text font-semibold">{labels.degree}</span></div>
+            <input type="text" bind:value={data.degree} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base" />
+        </label>
+
+        <label class="form-control w-full">
+            <div class="label"><span class="label-text font-semibold">{labels.academicYear}</span></div>
+            <input type="text" bind:value={data.academicYear} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base" />
         </label>
     </fieldset>
-    
-    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-6 bg-white">
-        <legend class="text-md font-bold text-black flex items-center gap-2 px-2"><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h12c1.11 0 2-.9 2-2V5c0-1.1-.89-2-2-2zm0 16H5V5h12v14zm-4-4H9v-2h4v2zm0-4H9V9h4v2z"></path></svg>{labels.keywords}</legend>
+
+    <fieldset class="flex flex-col gap-6 border border-orange-500 rounded-lg p-4 md:p-6 bg-white">
+        <legend class="text-base md:text-lg font-bold text-black flex items-center gap-2 px-2">
+            <Users class="w-5 h-5 text-orange-600" />
+            {labels.authors} / {labels.advisors}
+        </legend>
         
-        <div class="flex flex-wrap gap-2 p-2 border border-orange-500 rounded bg-white shadow-inner">
-            {#each data.keywords as keyword, index (index)}
-                <div class="badge badge-primary badge-lg gap-1 rounded-full p-3 pr-1" transition:fly={{ y: -20, delay: index * 50 }}>
-                    <span class="text-sm font-semibold">{keyword}</span>
-                    <button class="btn btn-ghost btn-xs h-6 w-6 p-0 min-h-0 text-primary-content opacity-70 hover:opacity-100" onclick={() => removeKeyword(index)} aria-label="ลบคำสำคัญ"><svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"></path></svg></button>
+        <div class="flex flex-col gap-3">
+            <div class="label"><span class="label-text font-semibold">{labels.authors}</span></div>
+            {#each data.authors as author, index (index)}
+                <div class="flex items-center gap-2 w-full" transition:fly={{ y: -20 }}>
+                    <input type="text" bind:value={author.name} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full grow bg-white text-sm md:text-base" />
+                    <button type="button" class="btn btn-outline btn-error h-11 w-11 p-0 rounded-xl shrink-0" onclick={() => removeAuthorAdvisor('authors', index)} disabled={data.authors.length === 1} aria-label="ลบผู้จัดทำ">
+                        <Trash2 class="w-5 h-5" />
+                    </button>
                 </div>
             {/each}
+            <button type="button" class="btn btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white btn-sm max-w-50 self-start mt-1 rounded-lg" onclick={() => addAuthorAdvisor('authors')}>
+                <Plus class="w-4 h-4" /> เพิ่มผู้จัดทำ
+            </button>
         </div>
-        <div class="flex items-center gap-2 mt-2">
-            <input type="text" bind:value={newKeyword} class="input input-bordered input-primary grow input-sm bg-white" placeholder="เพิ่มคำสำคัญ..." onkeydown={(e) => e.key === 'Enter' && addKeyword()}>
-            <button class="btn btn-outline btn-primary btn-sm" onclick={addKeyword}><svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path></svg> เพิ่ม</button>
+        
+        <div class="flex flex-col gap-3">
+            <div class="label"><span class="label-text font-semibold">{labels.advisors}</span></div>
+            {#each data.advisors as advisor, index (index)}
+                <div class="flex items-center gap-2 w-full" transition:fly={{ y: -20 }}>
+                    <input type="text" bind:value={advisor.name} class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full grow bg-white text-sm md:text-base" />
+                    <button type="button" class="btn btn-outline btn-error h-11 w-11 p-0 rounded-xl shrink-0" onclick={() => removeAuthorAdvisor('advisors', index)} disabled={data.advisors.length === 1} aria-label="ลบอาจารย์ที่ปรึกษา">
+                        <Trash2 class="w-5 h-5" />
+                    </button>
+                </div>
+            {/each}
+            <button type="button" class="btn btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white btn-sm max-w-50 self-start mt-1 rounded-lg" onclick={() => addAuthorAdvisor('advisors')}>
+                <Plus class="w-4 h-4" /> เพิ่มอาจารย์ที่ปรึกษา
+            </button>
         </div>
     </fieldset>
 
-</div>
+    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-4 md:p-6 bg-white">
+        <legend class="text-base md:text-lg font-bold text-black flex items-center gap-2 px-2">
+            <FileEdit class="w-5 h-5 text-orange-600" />
+            {labels.abstractTitle}
+        </legend>
+        
+        <label class="form-control w-full">
+            <textarea bind:value={data.abstract} class="textarea textarea-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 textarea-lg w-full h-48 bg-white text-sm md:text-base leading-relaxed" placeholder="{labels.abstract}..."></textarea>
+        </label>
+    </fieldset>
 
-<style>
-    legend {
-        border-radius: theme('borderRadius.lg');
-    }
-</style>
+    <fieldset class="flex flex-col gap-4 border border-orange-500 rounded-lg p-4 md:p-6 bg-white w-full min-w-0">
+        <legend class="text-base md:text-lg font-bold text-black flex items-center gap-2 px-2">
+            <Tags class="w-5 h-5 text-orange-600" />
+            {labels.keywords}
+        </legend>
+        
+        <div class="flex flex-wrap gap-2 p-3 border border-orange-300 rounded-lg bg-orange-50/50 shadow-inner min-h-15 w-full min-w-0">
+            {#each data.keywords as keyword, index (index)}
+                
+                <div class="flex w-fit max-w-full items-start gap-1 bg-orange-500 text-white pl-3 p-2 rounded-md shadow-sm" transition:fly={{ y: -20, delay: index * 50 }}>
+                    
+                    <span 
+                        class="text-xs md:text-sm font-medium text-left leading-snug min-w-0" 
+                        style="overflow-wrap: anywhere; word-break: break-word;">
+                        {keyword}
+                    </span>
+                    
+                    <button 
+                        type="button" 
+                        class="shrink-0 mt-0.5 flex items-center justify-center p-0.5 cursor-pointer opacity-70 hover:opacity-100 hover:text-white transition-opacity bg-transparent border-none text-white" 
+                        onclick={() => removeKeyword(index)} 
+                        aria-label="ลบคำสำคัญ">
+                        <X class="w-3.5 h-3.5" />
+                    </button>
+                    
+                </div>
+                
+            {/each}
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-2 mt-2 w-full">
+            <input 
+                type="text" bind:value={newKeyword} 
+                class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full grow bg-white text-sm min-w-0" 
+                placeholder="พิมพ์คำสำคัญแล้วกด Enter..." 
+                onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), addKeyword())}>
+            <button 
+                type="button" 
+                class="btn border-none bg-orange-500 text-white hover:bg-orange-600 w-full sm:w-auto rounded-lg shrink-0" 
+                onclick={addKeyword}>
+                <Plus class="w-5 h-5" /> เพิ่มคำสำคัญ
+            </button>
+        </div>
+    </fieldset>
+</div>

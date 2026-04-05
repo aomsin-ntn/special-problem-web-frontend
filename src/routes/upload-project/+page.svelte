@@ -5,11 +5,26 @@
 <script lang="ts">
     import { Upload, FileCheckCorner, SquarePen, Form } from 'lucide-svelte';
     import { goto } from '$app/navigation';
-    import type { ProjectData } from '$lib/stores/types';
     import Abstract_th_page from '$lib/assets/Abstract_th_page.jpg';
     import Abstract_en_page from '$lib/assets/Abstract_en_page.jpg';
     import OcrForm from '$lib/components/OcrForm.svelte';
     import { PUBLIC_API_URL } from '$env/static/public';
+
+    interface AuthorAdvisor {
+        name: string;
+    }
+
+    interface ProjectData {
+        title: string;
+        faculty: string;
+        department: string;
+        degree: string;
+        academicYear: string;
+        authors: AuthorAdvisor[];
+        advisors: AuthorAdvisor[];
+        abstract: string;
+        keywords: string[];
+    }
 
     let currentStep = $state(1);
     const stepItems = [
@@ -154,11 +169,14 @@
         try {
             const sortedPages = [...selectedPages].sort((a, b) => a - b);
             
+            const queryParams = new URLSearchParams();
+            sortedPages.forEach((page) => queryParams.append('pages', page.toString()));
+            const url = `${PUBLIC_API_URL}/project/upload?${queryParams.toString()}`;
+
             const formData = new FormData();
             formData.append('file', uploadedFile as File);
-            formData.append('selected_pages', JSON.stringify(sortedPages));
 
-            const response = await fetch(`${PUBLIC_API_URL}/project/upload`, {
+            const response = await fetch(url, {
                 method: 'POST',
                 body: formData
             });
@@ -167,9 +185,33 @@
 
             const data = await response.json();
 
-            currentProjectID = data.projectId;
-            ocrDataThai = data.thai;
-            ocrDataEnglish = data.english;
+            currentProjectID = data.saved_as;
+
+            const th = data['fields-th'] || {};
+            ocrDataThai = {
+                title: th.Title || '',
+                faculty: th.Faculty || '',
+                department: th.Department || '',
+                degree: th.Degree || '',
+                academicYear: th.AcademicYear || '',
+                authors: th.Name ? [{ name: th.Name }] : [], 
+                advisors: th.Advisor ? [{ name: th.Advisor }] : [],
+                abstract: th.Abstract || '',
+                keywords: th.Keywords ? th.Keywords.replace(/^:\s*/, '').split(',').map((k: string) => k.trim()).filter(Boolean) : []
+            };
+
+            const en = data['fields-en'] || {};
+            ocrDataEnglish = {
+                title: en.Title || '',
+                faculty: en.Faculty || '',
+                department: en.Department || '',
+                degree: en.Degree || '',
+                academicYear: en.AcademicYear || '',
+                authors: en.Name ? [{ name: en.Name }] : [],
+                advisors: en.Advisor ? [{ name: en.Advisor }] : [],
+                abstract: en.Abstract || '',
+                keywords: en.Keywords ? en.Keywords.replace(/^:\s*/, '').split(',').map((k: string) => k.trim()).filter(Boolean) : []
+            };
         } catch (error) {
             console.error('OCR Error:', error);
             alert('OCR processing failed');

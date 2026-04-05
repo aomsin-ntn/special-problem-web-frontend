@@ -3,6 +3,7 @@
 	import { Mail } from 'lucide-svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import CardProjectDetail from '$lib/components/CardProjectDetail.svelte';
+	import Swal from 'sweetalert2';
 
 	const formatValue = (value: string | null | undefined) => {
 		return value ? value : '-';
@@ -28,6 +29,7 @@
 		academicYear: string;
 		keywords: string[];
 		thumbnail?: string | null;
+		downloadCount: number;
 	}
 
 	let profileData = $state<StudentProfile | null>(null);
@@ -64,9 +66,9 @@
 							advisors: item.advisors?.map((a: any) => a.advisor_name_th) || [],
 							academicYear: item.project.academic_year,
 							keywords: item.keywords?.map((k: any) => k.keyword_text_th) || [],
-							thumbnail: item.project.thumbnail || null
+							thumbnail: item.project_file?.thumbnail_path || null,
+							downloadCount: item.project.downloaded_count || 0
 						}));
-						console.log(userProjects);
 					}
 				}
 			} catch (error) {
@@ -83,33 +85,75 @@
 		goto('/upload-project');
 	};
 
+	const handleDeleteProject = async (projectId: string) => {
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบโปรเจกต์?',
+            text: "ข้อมูลโปรเจกต์นี้จะถูกลบและไม่สามารถกู้คืนได้",
+            icon: 'warning',
+            showCancelButton: true,
+			cancelButtonColor: '#3085d6',
+            confirmButtonColor: '#d33',
+			cancelButtonText: 'ยกเลิก',
+            confirmButtonText: 'ยืนยันลบ',
+			reverseButtons: true
+        });
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`${PUBLIC_API_URL}/project/delete?project_id=${projectId}`, {
+                    method: 'PATCH',
+    				credentials: 'include'
+				});
+
+                if (!response.ok) throw new Error('Failed to delete project');
+
+                userProjects = userProjects.filter(p => p.projectId !== projectId);
+
+                Swal.fire({
+                    title: 'ลบสำเร็จ',
+                    text: 'โปรเจกต์ของคุณถูกลบออกจากระบบแล้ว',
+                    icon: 'success',
+                    confirmButtonColor: '#FF8D00'
+                });
+
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                Swal.fire({
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถลบโปรเจกต์ได้ในขณะนี้',
+                    icon: 'error',
+                    confirmButtonColor: '#FF8D00'
+                });
+            }
+        }
+    };
+
 </script>
 
 <div class="bg-white min-h-screen text-black">
 	<div class="container mx-auto py-12 max-w-6xl">
 		
 		<section class="mb-16">
-			<div class="border-b border-black pb-6 mb-8">
+			<div class="border-b border-gray-400 pb-6 mb-8">
 				<p class="text-xl md:text-2xl lg:text-3xl font-semibold">My Profile</p>
 			</div>
 
 			{#if isLoading}
-				<div class="flex flex-col gap-4 mb-8 border-2 border-gray-200 bg-gray-50 rounded-3xl p-9 animate-pulse h-48"></div>
+                <div class="flex flex-col gap-4 mb-8 border-2 border-gray-200 bg-gray-50 rounded-3xl p-5 md:p-9 animate-pulse h-48"></div>
 			{:else}
-				<div class="flex flex-col gap-4 mb-8 border-2 border-black bg-white rounded-3xl p-9 shadow-sm">
-					<p class="text-sm md:text-sm lg:text-sm font-light">{formatValue(profileData?.studentId)}</p>
-					<p class="text-base md:text-lg lg:text-xl font-semibold">{formatValue(profileData?.studentName)}</p>
-					<p class="text-sm md:text-base lg:text-base font-semibold">หลักสูตร <span class="font-normal">{formatValue(profileData?.degree)}</span></p>
+				<div class="flex flex-col gap-4 mb-8 border border-gray-200 bg-white rounded-3xl p-5 md:p-9 shadow-sm">
+					<p class="text-xs md:text-sm font-medium text-black">{formatValue(profileData?.studentId)}</p>
+					<h2 class="text-xl md:text-2xl font-bold text-black">{formatValue(profileData?.studentName)}</h2>
+					<p class="text-sm md:text-base font-bold text-gray-200">หลักสูตร <span class="font-medium text-gray-300">{formatValue(profileData?.degree)}</span></p>
 
-					<div class="flex flex-wrap gap-x-16 gap-y-2 mb-4 text-sm md:text-base lg:text-base font-semibold">
-						<div>คณะ <span class="font-normal">{formatValue(profileData?.faculty)}</span></div>
-						<div>ภาควิชา <span class="font-normal">{formatValue(profileData?.department)}</span></div>
+                    <div class="flex flex-col sm:flex-row gap-y-2 gap-x-6 md:gap-x-16 mb-2 text-sm md:text-base font-bold text-gray-200">
+						<div>คณะ <span class="font-medium text-gray-300">{formatValue(profileData?.faculty)}</span></div>
+						<div>ภาควิชา <span class="font-medium text-gray-300">{formatValue(profileData?.department)}</span></div>
 					</div>
 
-					<hr class="border-t border-black " />
+					<hr class="border-t border-gray-100 my-2" />
 
-					<div class="flex items-center gap-4 text-sm md:text-base lg:text-base font-normal">
-						<Mail class="w-5 h-5" />
+					<div class="flex items-center gap-3 text-sm md:text-base text-gray-200">
+						<Mail class="w-5 h-5 text-gray-200 shrink-0" />
 						<p>{formatValue(profileData?.email)}</p>
 					</div>
 				</div>
@@ -117,7 +161,7 @@
 		</section>
 
 		<section>
-			<div class="flex items-center justify-between border-b border-black pb-6 mb-8">
+			<div class="flex items-center justify-between border-b border-gray-400 pb-6 mb-8">
 				<p class="text-xl md:text-2xl lg:text-3xl font-semibold">My Project</p>
 				<button 
 					onclick={handleUpload}
@@ -144,6 +188,9 @@
 							semester={userProject.academicYear}
 							keywords={userProject.keywords}
 							thumbnail={userProject.thumbnail}
+							downloadCount={userProject.downloadCount}
+							showDelete={true}
+							onDelete={handleDeleteProject}
 						/>
 					</div>
 				{/each}
