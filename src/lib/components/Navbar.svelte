@@ -9,12 +9,6 @@
     let isDropdownOpen = $state(false);
     let dropdownRef = $state<HTMLElement | null>(null);
 
-    let auth = $state({ isLoggedIn: false, user: null as any});
-
-    const unsubscribe = authStore.subscribe((value) => {
-        auth = value;
-    });
-
     function handleNavigate(href: string): void {
         isMobileMenuOpen = false;
         isDropdownOpen = false;
@@ -24,9 +18,7 @@
     async function handleLogout() {
         isDropdownOpen = false;
         isMobileMenuOpen = false;
-
         await logoutAuth();
-
         window.location.href = '/';
     }
 
@@ -43,28 +35,24 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<nav class="flex items-center justify-between px-4 sm:px-6 md:px-10 py-1 bg-orange-500 shadow-sm">
+<nav class="flex items-center justify-between px-4 sm:px-6 md:px-10 py-1 bg-orange-500 relative z-50">
     <div class="shrink-0">
         <a 
             href="/" 
-            class="flex items-center gap-2"
-        >
+            class="flex items-center gap-2">
             <img 
                 src={kmitlLogo} 
                 alt="KMITL Logo" 
-                class="h-10 sm:h-12 md:h-15"
-            />
+                class="h-10 sm:h-12 md:h-15" />
         </a>
     </div>
 
-    <!-- Desktop Menu -->
     <ul class="hidden md:flex items-center space-x-4 md:space-x-5 text-white text-xs sm:text-sm md:text-base font-medium">
         {#each menus as menu (menu.href)}
             <li>
                 <button 
-                    onclick={() => handleNavigate(menu.href)}
-                    class="hover:text-yellow-300 transition-colors cursor-pointer bg-none border-none p-0"
-                >
+                    type="button" onclick={() => handleNavigate(menu.href)} 
+                    class="hover:text-yellow-300 transition-colors bg-transparent border-none cursor-pointer">
                     {menu.name}
                 </button>
             </li>
@@ -76,29 +64,27 @@
         {#if $authStore.isLoggedIn && $authStore.user}
             <li class="h-5 w-px bg-white"></li>
             <li class="relative" bind:this={dropdownRef}>
-                <button
-                    onclick={() => isDropdownOpen = !isDropdownOpen}
-                    class="flex items-center gap-2 hover:text-yellow-300 transition-colors cursor-pointer bg-none border-none p-0"
-                >
+                <button 
+                    type="button" 
+                    onclick={() => isDropdownOpen = !isDropdownOpen} 
+                    class="flex items-center gap-2 hover:text-yellow-300 transition-colors bg-transparent border-none cursor-pointer">
                     <User size={18} />
-                    <span>{$authStore.user?.email}</span>
+                    <span class="hidden lg:inline">{$authStore.user?.email}</span>
                 </button>
                 
                 {#if isDropdownOpen}
-                    <div class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg z-50" transition:slide={{ duration: 200 }}>
-                        <button
-                            onclick={() => handleNavigate('/Profile')}
-                            class="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-800 hover:bg-orange-50 rounded-t-lg transition-colors border-none bg-none cursor-pointer"
-                        >
-                            <User size={16} />
-                            Profile
+                    <div class="absolute right-0 mt-2 w-48 rounded-lg bg-white shadow-lg z-50 overflow-hidden" transition:slide={{ duration: 200 }}>
+                        <button 
+                            type="button" 
+                            onclick={() => handleNavigate('/profile')} 
+                            class="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-800 hover:bg-orange-50 transition-colors bg-transparent border-none cursor-pointer">
+                            <User size={16} /> Profile
                         </button>
-                        <button
-                            onclick={handleLogout}
-                            class="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-b-lg transition-colors border-none bg-none cursor-pointer"
-                        >
-                            <LogOut size={16} />
-                            Log out
+                        <button 
+                            type="button" 
+                            onclick={handleLogout} 
+                            class="flex w-full items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors bg-transparent border-none cursor-pointer">
+                            <LogOut size={16} /> Log out
                         </button>
                     </div>
                 {/if}
@@ -107,69 +93,64 @@
             <li class="h-5 w-px bg-white"></li>
             <li>
                 <button 
-                    onclick={() => handleNavigate('/login')}
-                    class="hover:text-yellow-300 transition-colors cursor-pointer bg-none border-none p-0"
-                >
+                    type="button" 
+                    onclick={() => handleNavigate('/login')} 
+                    class="hover:text-yellow-300 transition-colors bg-transparent border-none cursor-pointer">
                     Login
                 </button>
             </li>
         {/if}
     </ul>
 
-    <!-- Mobile Menu Button -->
     <button 
-        onclick={() => isMobileMenuOpen = !isMobileMenuOpen}
-        class="md:hidden cursor-pointer p-2 rounded-lg hover:bg-orange-300 transition"
-        aria-label="Toggle menu"
-    >
+        type="button" 
+        onclick={() => isMobileMenuOpen = !isMobileMenuOpen} 
+        class="md:hidden cursor-pointer p-2 rounded-lg hover:bg-orange-600 transition-colors bg-transparent border-none">
         {#if isMobileMenuOpen}
-            <X size={24} color="white" strokeWidth={2} />
+            <X size={24} color="white" />
         {:else}
-            <Menu size={24} color="white" strokeWidth={2} />
+            <Menu size={24} color="white" />
         {/if}
     </button>
 </nav>
 
-<!-- Mobile Menu -->
 {#if isMobileMenuOpen}
-    <div class="md:hidden bg-orange-700 shadow-md" transition:slide={{ duration: 300 }}>
+    <div class="md:hidden bg-orange-700 shadow-md absolute w-full z-40" transition:slide={{ duration: 200 }}>
         <ul class="flex flex-col items-start px-4 py-3 space-y-2 text-white font-medium">
             {#each menus as menu (menu.href)}
                 <li class="w-full">
                     <button 
-                        onclick={() => handleNavigate(menu.href)}
-                        class="w-full text-left px-3 py-2 hover:bg-orange-300 rounded transition-colors cursor-pointer bg-none border-none"
-                    >
+                        type="button" 
+                        onclick={() => handleNavigate(menu.href)} 
+                        class="w-full text-left px-3 py-2 hover:bg-orange-600 rounded transition-colors bg-transparent border-none">
                         {menu.name}
                     </button>
                 </li>
             {/each}
 
-            {#if auth.isLoggedIn && auth.user}
+            {#if $authStore.isLoggedIn && $authStore.user}
                 <li class="w-full border-t border-orange-500 mt-2 pt-2">
                     <button 
-                        onclick={() => handleNavigate('/Profile')}
-                        class="w-full text-left px-3 py-2 hover:bg-orange-300 rounded transition-colors cursor-pointer bg-none border-none flex items-center gap-2"
-                    >
-                        <User size={16} />
-                        Profile
+                        type="button" 
+                        onclick={() => handleNavigate('/profile')} 
+                        class="w-full text-left px-3 py-2 hover:bg-orange-600 rounded transition-colors flex items-center gap-2 bg-transparent border-none">
+                        <User size={16} /> Profile
                     </button>
                 </li>
                 <li class="w-full">
                     <button 
-                        onclick={handleLogout}
-                        class="w-full text-left px-3 py-2 hover:bg-red-600 rounded transition-colors cursor-pointer bg-none border-none flex items-center gap-2"
-                    >
-                        <LogOut size={16} />
-                        Log out
+                        type="button" 
+                        onclick={handleLogout} 
+                        class="w-full text-left px-3 py-2 hover:bg-red-600 rounded transition-colors flex items-center gap-2 bg-transparent border-none">
+                        <LogOut size={16} /> Log out
                     </button>
                 </li>
             {:else}
-                <li class="w-full">
+                <li class="w-full border-t border-orange-500 mt-2 pt-2">
                     <button 
-                        onclick={() => handleNavigate('/login')}
-                        class="w-full text-left px-3 py-2 hover:bg-orange-300 rounded transition-colors cursor-pointer bg-none border-none"
-                    >
+                        type="button" 
+                        onclick={() => handleNavigate('/login')} 
+                        class="w-full text-left px-3 py-2 hover:bg-orange-600 rounded transition-colors bg-transparent border-none">
                         Login
                     </button>
                 </li>
