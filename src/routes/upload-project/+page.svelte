@@ -124,6 +124,7 @@
 	};
 
 	let isLoadingOcr = $state(false);
+    let isSaving = $state(false);
     let fileInfo = $state<{ file_path: string; save_name: string; thumbnail_path: string } | null>(null);
     let degreeId = $state<string | null>(null);
     let advisorId = $state<string | null>(null);
@@ -172,7 +173,7 @@
                 degree: form.degree?.degree_name_th || '',
                 academicYear: form.academic_year || '',
                 authors: (form.students || []).map((s: any) => ({ name: s.name_th || '', studentId: s.student_id || '' })),
-                advisors: (form.advisors || []).map((a: any) => ({ name: a.advisorname_th || ''})),
+                advisors: (form.advisors || []).map((a: any) => ({ name: a.advisor_name_th || ''})),
                 abstract: form.abstract_th || '',
                 keywords: (form.keywords || []).map((k: any) => k.th || '')
             };
@@ -185,7 +186,7 @@
                 degree: form.degree?.degree_name_en || '',
                 academicYear: form.academic_year || '',
                 authors: (form.students || []).map((s: any) => ({ name: s.name_en || '', studentId: s.student_id || '' })),
-                advisors: (form.advisors || []).map((a: any) => ({ name: a.advisorname_en || ''})),
+                advisors: (form.advisors || []).map((a: any) => ({ name: a.advisor_name_en || ''})),
                 abstract: form.abstract_en || '',
                 keywords: (form.keywords || []).map((k: any) => k.en || '')
             };
@@ -213,7 +214,7 @@
     // บันทึกข้อมูลที่แก้ไขแล้วไปยังเซิร์ฟเวอร์
     const handleSubmit = async (event: SubmitEvent) => {
         event.preventDefault();
-        isLoadingOcr = true;
+        isSaving = true;
         try {
             if (!fileInfo) throw new Error('ไม่พบข้อมูลไฟล์อ้างอิง');
 
@@ -274,7 +275,7 @@
                     faculty_name_th: ocrDataThai.faculty,
                     faculty_name_en: ocrDataEnglish.faculty
                 },
-                advisor: advisorsPayload,
+                advisors: advisorsPayload,
                 students: studentsPayload,
                 keywords: keywordsPayload,
                 file_info: fileInfo
@@ -302,7 +303,7 @@
             console.error('Save Error:', error);
             alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
         } finally {
-            isLoadingOcr = false;
+            isSaving = false;
         }
     };
 </script>
@@ -469,7 +470,6 @@
     {/if}
 
     {#if currentStep === 3}
-        <!-- ขั้นตอนที่ 3: ตรวจสอบข้อมูล OCR และบันทึก -->
         <section class="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
             <form onsubmit={handleSubmit}>
                 <div class="bg-white border border-gray-500 shadow-sm rounded-2xl p-6 md:p-10">
@@ -517,18 +517,23 @@
                         type="button"
                         class="btn btn-outline w-full md:w-1/3 text-lg h-14 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 rounded-xl bg-white shadow-sm" 
                         onclick={prevStep}
-                        disabled={isLoadingOcr}>
+                        disabled={isLoadingOcr || isSaving}>
                         ย้อนกลับ
                     </button>
+                    
                     <button 
                         type="submit"
                         class="w-full md:w-2/3 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 shadow-md flex items-center justify-center gap-2" 
-                        disabled={isLoadingOcr}>
+                        disabled={isLoadingOcr || isSaving}>
+                        
                         {#if isLoadingOcr}
+                            <span class="loading loading-spinner loading-sm"></span> กำลังอ่านข้อมูล...
+                        {:else if isSaving}
                             <span class="loading loading-spinner loading-sm"></span> กำลังบันทึก...
                         {:else}
                             <FileCheckCorner class="h-5 w-5"/> บันทึกข้อมูล
                         {/if}
+                        
                     </button>
                 </div>
             </form>
