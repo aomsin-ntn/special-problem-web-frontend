@@ -29,7 +29,7 @@
         </span>
     </div>
 
-    <hr class="border-gray-100 my-1"/>
+    <hr class="border-gray-600 my-1"/>
 
     <div class="w-full flex flex-col gap-2 grow overflow-hidden">
         <h3 class="text-black line-clamp-3 text-ellipsis text-base font-semibold leading-snug">
@@ -40,7 +40,7 @@
         </p>
     </div>
 
-    <hr class="border-gray-100 my-1"/>
+    <hr class="border-gray-600 my-1"/>
 
     <div class="flex flex-col gap-1.5 shrink-0">
         {#each keywords.slice(0, 3) as keyword (keyword)}

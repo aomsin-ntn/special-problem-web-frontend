@@ -45,7 +45,7 @@
 
 <a 
     href={`/project-detail?id=${id}`} 
-    class="relative group w-full bg-white rounded-xl border border-gray-200 shadow-md p-4 flex flex-col md:flex-row gap-4 md:gap-6 hover:-translate-y-1 transition-transform duration-300 cursor-pointer hover:shadow-lg no-underline">
+    class="relative group w-full bg-white rounded-xl border border-gray-500 shadow-md p-4 flex flex-col md:flex-row gap-4 md:gap-6 hover:-translate-y-1 transition-transform duration-300 cursor-pointer hover:shadow-lg no-underline">
 
     <div class="w-full md:w-32 lg:w-40 shrink-0 h-48 md:h-full">
         <img 
@@ -56,8 +56,8 @@
 
     <div class="flex flex-col gap-3 justify-center items-start w-full py-1">
         <div class="flex flex-wrap gap-2">
-            <span class="badge badge-outline border-orange-500 text-orange-500 bg-white text-sm">คณะ{faculty}</span>
-            <span class="badge badge-outline border-orange-600 text-orange-600 bg-white text-sm">ภาควิชา{department}</span>
+            <span class="badge badge-outline border-orange-500 text-orange-500 bg-white text-xs">คณะ{faculty}</span>
+            <span class="badge badge-outline border-orange-600 text-orange-600 bg-white text-xs">ภาควิชา{department}</span>
         </div>
 
         <div>

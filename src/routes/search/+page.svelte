@@ -1,12 +1,11 @@
 <script lang="ts">
     import { page } from '$app/state';
-    import { goto } from '$app/navigation';
     import { PUBLIC_API_URL } from '$env/static/public';
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import SearchBar from "$lib/components/SearchBar.svelte";
     import FilterSideBar from "$lib/components/FilterSideBar.svelte";
     import CardProjectDetail from '$lib/components/CardProjectDetail.svelte';
-    
+    import { SlidersHorizontal } from 'lucide-svelte';
 
     interface Option {
         id: string;
@@ -22,25 +21,41 @@
         value: string;
     }
 
+    interface ProjectItem {
+        project: {
+            project_id: string;
+            academic_year: string;
+            title_th: string;
+            title_en: string;
+            downloaded_count: number;
+        };
+        faculty: { faculty_name_th: string };
+        department: { department_name_th: string };
+        users: { user_name_th: string }[];
+        advisors: { advisor_name_th: string }[];
+        keywords: { keyword_text_th: string }[];
+        project_file?: { thumbnail_path: string };
+    }
+
     const searchTerm = $derived(page.url.searchParams.get('q') ?? '');
     
-    // Sorting state
     let sortBy = $state<string>('downloaded_count-desc');
     let isDropdownOpen = $state<boolean>(false);
+    let dropdownRef = $state<HTMLElement | null>(null);
     let currentPage = $state<number>(1);
     const itemsPerPage = 10;
 
     let selectedYears = $state<string[]>([]);
     let selectedDepartments = $state<string[]>([]);
-
     let faculties = $state<Faculty[]>([]);
-    let projects = $state<any[]>([]);
-    let isLoading = $state<boolean>(false);
+    let projects = $state<ProjectItem[]>([]);
+    let isLoading = $state<boolean>(true);
 
     let totalItems = $state<number>(0);
     let totalPages = $state<number>(1);
 
-    // Filter and sort projects
+    let isMobileFilterOpen = $state<boolean>(false);
+
     const sortOptions: SortOption[] = [
         { label: 'เรียงตามดาวน์โหลดมากที่สุด', value: 'downloaded_count-desc' },
         { label: 'เรียงตามดาวน์โหลดน้อยที่สุด', value: 'downloaded_count-asc' },
@@ -48,31 +63,35 @@
         { label: 'เรียงตามอัปโหลดเก่า > ใหม่', value: 'created_at-desc' },
     ];
 
-    // Get selected sort label
     const selectedSortLabel = $derived(sortOptions.find(opt => opt.value === sortBy)?.label || sortBy);
 
-    // Toggle dropdown
     function toggleDropdown() {
         isDropdownOpen = !isDropdownOpen;
     }
 
-    // Handle sort selection
     function handleSort(value: string) {
         sortBy = value;
         isDropdownOpen = false;
         currentPage = 1;
     }
 
-    // Reset pagination when filters change
+    function handleClickOutside(event: MouseEvent) {
+        if (dropdownRef && !dropdownRef.contains(event.target as Node)) {
+            isDropdownOpen = false;
+        }
+    }
+
     $effect(() => {
+        searchTerm;
         selectedYears;
         selectedDepartments;
-        currentPage = 1;
+        untrack(() => {
+            if (currentPage !== 1) currentPage = 1;
+        });
     });
 
-    // Handle page change
     function goToPage(pageNum: number) {
-        if (pageNum >= 1) {
+        if (pageNum >= 1 && pageNum <= totalPages) {
             currentPage = pageNum;
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -106,6 +125,7 @@
     });
 
     $effect(() => {
+        // รีเซ็ตหน้าและดึงผลลัพธ์ใหม่เมื่อคำค้นหรือฟิลเตอร์เปลี่ยน
         const fetchProjects = async () => {
             isLoading = true;
             try {
@@ -126,16 +146,20 @@
                 const response = await fetch(`${PUBLIC_API_URL}/project/?${queryParams.toString()}`);
                 if (response.ok) {
                     const responseData = await response.json();
-                    projects = await responseData.data || [];
-                    totalItems = responseData.total_items || 0;
-                    totalPages = responseData.total_pages || 1;
+                    projects = responseData.data || []; 
+
+                    totalItems = responseData.metadata?.total_items ?? 0;
+                    totalPages = responseData.metadata?.total_pages ?? 1;
+                    
                 } else {
                     projects = [];
+                    totalItems = 0;
                     totalPages = 1;
                 }
             } catch (error) {
                 console.error('Error fetching projects:', error);
                 projects = [];
+                totalItems = 0;
                 totalPages = 1;
             } finally {
                 isLoading = false;
@@ -146,57 +170,72 @@
     });
 </script>
 
+<svelte:window onclick={handleClickOutside} />
+
 <main class="flex flex-col items-center">
 
-    <section class="w-full bg-white gap-6 px-10 md:px-20 lg:px-30 pb-10 flex flex-col divide-y-2 divide-gray-600">
+    <section class="w-full bg-white gap-6 px-4 md:px-10 lg:px-20 xl:px-30 pb-10 flex flex-col divide-y-2 divide-gray-600">
 
         <section>
+            <!-- ส่วนหัวหน้าและช่องค้นหา -->
             <div class="flex flex-col items-center gap-6 py-12 px-4 sm:px-6 md:px-10">
-                <p class="text-black text-lg md:text-xl lg:text-2xl font-semibold">
+                <p class="text-black text-lg md:text-xl lg:text-2xl font-semibold text-center">
                     ค้นหาเล่มปัญหาพิเศษที่คุณต้องการได้ที่นี่
                 </p>
-                <SearchBar value={searchTerm}/>
+                <div class="w-full max-w-2xl">
+                    <SearchBar value={searchTerm}/>
+                </div>
             </div>
         </section>
 
-        <section> 
-            <div class="w-full flex items-start divide-x-2 divide-gray-600 px-2">
-                <div class="w-1/5 pr-2 sticky top-0 h-screen overflow-y-auto">
+        <section>
+            <!-- ปุ่มเปิด/ปิดตัวกรองสำหรับหน้าจอมือถือ -->
+            <button
+                type="button"
+                onclick={() => isMobileFilterOpen = !isMobileFilterOpen}
+                class="lg:hidden w-full flex items-center justify-center gap-2 bg-white border-2 border-gray-300 py-3 rounded-xl shadow-sm text-gray-700 font-semibold active:bg-gray-50 cursor-pointer mb-6"
+            >
+                <SlidersHorizontal class="w-5 h-5" />
+                {isMobileFilterOpen ? 'ซ่อนตัวกรอง' : 'แสดงตัวกรอง'}
+            </button>
+
+            <div class="w-full flex flex-col lg:flex-row items-start lg:divide-x-2 divide-gray-600 px-0 lg:px-2 pt-0 lg:pt-6">
+                
+                <!-- แถบตัวกรองด้านซ้าย -->
+                <div class="{isMobileFilterOpen ? 'block' : 'hidden'} lg:block w-full lg:w-1/5 lg:pr-2 lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto mb-8 lg:mb-0 z-10">
                     <FilterSideBar {faculties} bind:selectedYears bind:selectedDepartments/>
                 </div>
 
-                <div class="w-4/5 flex flex-col gap-4 pl-4">
-                    <!-- Search Results Count and Sort Filter -->
-                    <div class="flex justify-between items-center pb-2 pt-1 px-2">
+                <!-- พื้นที่แสดงผลลัพธ์และตัวเลือกเรียงลำดับ -->
+                <div class="w-full lg:w-4/5 flex flex-col gap-4 lg:pl-4">
+                    
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-2 pt-1 px-2">
                         <div>
                             <p class="text-black text-sm md:text-base">
-                                ผลลัพธ์การค้นหา (<span class="font-semibold text-orange-500">{projects.length}</span> รายการ)
+                                ผลลัพธ์การค้นหา (<span class="font-semibold text-orange-500">{totalItems}</span> รายการ)
                             </p>
                         </div>
                         
-                        <!-- Sorting Dropdown -->
-                        <div class="relative">
+                        <div class="relative w-full sm:w-auto" bind:this={dropdownRef}>
                             <button 
                                 onclick={toggleDropdown}
-                                class="flex items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition"
+                                class="w-full sm:w-auto flex justify-between items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition cursor-pointer"
                             >
                                 <span class="text-sm md:text-base text-black">{selectedSortLabel}</span>
                                 <svg 
                                     class="w-4 h-4 transition transform {isDropdownOpen ? 'rotate-180' : ''}" 
-                                    fill="none" 
-                                    stroke="black" 
-                                    viewBox="0 0 24 24"
+                                    fill="none" stroke="black" viewBox="0 0 24 24"
                                 >
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                                 </svg>
                             </button>
                             
                             {#if isDropdownOpen}
-                                <div class="absolute right-0 mt-2 w-64 bg-white border-2 border-gray-300 rounded-lg shadow-lg z-10">
+                                <div class="absolute right-0 mt-2 w-full sm:w-64 bg-white border-2 border-gray-300 rounded-lg shadow-lg z-20">
                                     {#each sortOptions as option (option.value)}
                                         <button 
                                             onclick={() => handleSort(option.value)}
-                                            class="w-full text-left px-4 py-3 hover:bg-orange-200 transition {sortBy === option.value ? 'bg-orange-700 font-semibold text-orange-800' : 'text-gray-700'}"
+                                            class="w-full text-left px-4 py-3 hover:bg-orange-200 transition cursor-pointer {sortBy === option.value ? 'bg-orange-700 font-semibold text-orange-100' : 'text-gray-700'}"
                                         >
                                             {option.label}
                                         </button>
@@ -206,13 +245,28 @@
                         </div>
                     </div>
 
-                    <!-- Project Cards -->
                     <div class="flex flex-col gap-4">
                         {#if isLoading}
-                            <div class="py-10 text-center text-gray-500">กำลังโหลดข้อมูล...</div>
+                            <!-- แสดงการ์ดโหลดระหว่างรอข้อมูลจาก API -->
+                            {#each Array(3) as _}
+                                <div class="w-full bg-white rounded-xl border border-gray-200 shadow-md p-4 flex flex-col md:flex-row gap-6 animate-pulse">
+                                    <div class="w-full md:w-41.25 h-65 bg-gray-200 rounded-lg shrink-0"></div>
+                                    <div class="flex flex-col gap-4 grow py-2 justify-center">
+                                        <div class="flex gap-2">
+                                            <div class="w-20 h-6 bg-orange-100/50 rounded-full"></div>
+                                            <div class="w-24 h-6 bg-orange-700/50 rounded-full"></div>
+                                        </div>
+                                        <div class="w-3/4 h-6 bg-gray-200 rounded mt-2"></div>
+                                        <div class="w-full h-5 bg-gray-200 rounded"></div>
+                                        <div class="w-1/2 h-5 bg-gray-200 rounded"></div>
+                                    </div>
+                                </div>
+                            {/each}
                         {:else if projects.length === 0}
-                            <div class="py-10 text-center text-gray-500">ไม่พบข้อมูลที่ค้นหา</div>
+                            <!-- กรณีไม่พบข้อมูลที่ตรงกับเงื่อนไขค้นหา -->
+                            <div class="py-20 text-center text-gray-500 font-medium text-lg">ไม่พบข้อมูลที่ค้นหา</div>
                         {:else}
+                            <!-- วนแสดงรายการเล่มปัญหาพิเศษที่ค้นเจอ -->
                             {#each projects as item (item.project.project_id)}
                                 <CardProjectDetail 
                                     id={item.project.project_id}
@@ -231,14 +285,13 @@
                         {/if}
                     </div>
 
-                    <!-- Pagination -->
-                    {#if totalPages > 1}
+                    {#if totalPages > 1 && !isLoading}
+                        <!-- แถบเปลี่ยนหน้าผลลัพธ์ -->
                         <div class="flex justify-center items-center gap-2 py-6">
-                            <!-- Previous Button -->
                             <button 
                                 onclick={() => goToPage(currentPage - 1)}
                                 disabled={currentPage === 1}
-                                class="p-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                class="p-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                                 title="หน้าก่อนหน้า"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="black" viewBox="0 0 24 24">
@@ -246,23 +299,24 @@
                                 </svg>
                             </button>
 
-                            <!-- Page Numbers -->
-                            {#each Array.from({ length: totalPages }, (_, i) => i + 1) as pageNum (pageNum)}
-                                <button 
-                                    onclick={() => goToPage(pageNum)}
-                                    class="w-10 h-10 rounded-lg border-2 transition {currentPage === pageNum 
+                            <div class="flex gap-1 overflow-x-auto hide-scrollbar max-w-full px-2">
+                                {#each Array.from({ length: totalPages }, (_, i) => i + 1) as pageNum (pageNum)}
+                                    <button 
+                                        onclick={() => goToPage(pageNum)}
+                                        class="min-w-10 h-10 rounded-lg border-2 transition cursor-pointer shrink-0 
+                                        {currentPage === pageNum 
                                         ? 'bg-orange-500 text-white border-orange-500' 
                                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'}"
-                                >
-                                    {pageNum}
-                                </button>
-                            {/each}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                {/each}
+                            </div>
 
-                            <!-- Next Button -->
                             <button 
                                 onclick={() => goToPage(currentPage + 1)}
                                 disabled={currentPage === totalPages}
-                                class="p-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                class="p-2 rounded-lg border-2 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
                                 title="หน้าถัดไป"
                             >
                                 <svg class="w-5 h-5" fill="none" stroke="black" viewBox="0 0 24 24">
