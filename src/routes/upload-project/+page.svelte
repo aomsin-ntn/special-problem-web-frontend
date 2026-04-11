@@ -470,6 +470,16 @@
     {/if}
 
     {#if currentStep === 3}
+        {#if isSaving}
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm transition-all duration-300">
+                <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95">
+                    <span class="loading loading-spinner loading-lg text-orange-500"></span>
+                    <p class="text-xl font-bold text-gray-800 animate-pulse">กำลังบันทึกข้อมูล...</p>
+                    <p class="text-sm text-gray-500">กรุณารอสักครู่ ห้ามปิดหรือรีเฟรชหน้าต่างนี้</p>
+                </div>
+            </div>
+        {/if}
+
         <section class="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
             <form onsubmit={handleSubmit}>
                 <div class="bg-white border border-gray-500 shadow-sm rounded-2xl p-6 md:p-10">

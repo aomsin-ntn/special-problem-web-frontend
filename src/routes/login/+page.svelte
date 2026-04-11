@@ -3,8 +3,6 @@
 	import { PUBLIC_API_URL } from '$env/static/public';
 
 	let isLoading = $state(false);
-
-
 </script>
 
 <main class="relative flex flex-col items-center justify-center min-h-screen bg-linear-to-b from-orange-500 to-orange-100 px-4">
