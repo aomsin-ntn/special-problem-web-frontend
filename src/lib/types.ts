@@ -1,6 +1,6 @@
 import type { Component } from 'svelte';
 
-export interface AuthorAdvisor {
+export interface Author {
     studentId?: string;
     name: string;
 }
@@ -11,8 +11,8 @@ export interface ProjectData {
     department: string;
     degree: string;
     academicYear: string;
-    authors: AuthorAdvisor[];
-    advisors: AuthorAdvisor[];
+    authors: Author[];
+    advisors: Author[];
     abstract: string;
     keywords: string[];
 }

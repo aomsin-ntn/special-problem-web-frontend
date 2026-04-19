@@ -6,7 +6,6 @@
     interface Props {
         data: ProjectData;
         lang: 'th' | 'en';
-        /** Optional spell errors for the project title field. */
         titleSpellErrors?: SpellError[];
     }
 
@@ -15,9 +14,6 @@
     const labels = $derived({
         legend:       lang === 'th' ? 'ข้อมูลโปรเจกต์'  : 'Project Data',
         title:        lang === 'th' ? 'ชื่อโครงงาน'      : 'Project Title',
-        faculty:      lang === 'th' ? 'คณะ'              : 'Faculty',
-        department:   lang === 'th' ? 'สาขา'             : 'Department',
-        degree:       lang === 'th' ? 'ปริญญา'            : 'Degree',
         academicYear: lang === 'th' ? 'ปีการศึกษา'        : 'Academic Year',
     });
 </script>
@@ -37,34 +33,6 @@
             placeholder="{labels.title}..."
             inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 textarea-lg w-full min-h-[12rem] bg-white text-sm md:text-base leading-relaxed"
             rows={6}
-        />
-    </label>
-
-    <!-- The remaining plain inputs are unchanged ─────────────────────────── -->
-    <label class="form-control w-full">
-        <div class="label"><span class="label-text font-semibold">{labels.faculty}</span></div>
-        <input
-            type="text"
-            bind:value={data.faculty}
-            class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base"
-        />
-    </label>
-
-    <label class="form-control w-full">
-        <div class="label"><span class="label-text font-semibold">{labels.department}</span></div>
-        <input
-            type="text"
-            bind:value={data.department}
-            class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base"
-        />
-    </label>
-
-    <label class="form-control w-full">
-        <div class="label"><span class="label-text font-semibold">{labels.degree}</span></div>
-        <input
-            type="text"
-            bind:value={data.degree}
-            class="input input-bordered focus:border-orange-500 border-orange-500 focus:outline-orange-600 w-full bg-white text-sm md:text-base"
         />
     </label>
 

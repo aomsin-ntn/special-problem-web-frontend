@@ -130,6 +130,10 @@
             }
         }
     };
+
+	const handleEditProject = (projectId: string) => {
+		goto(`/edit-project?id=${projectId}`);	
+	};
 </script>
 
 <div class="bg-white min-h-screen text-black">
@@ -230,8 +234,8 @@
                                 keywords={userProject.keywords}
                                 thumbnail={userProject.thumbnail}
                                 downloadCount={userProject.downloadCount}
-                                showDelete={true}
-                                onDelete={handleDeleteProject}
+								showEdit={true}
+                                onEdit={handleEditProject}
                             />
                         </div>
                     {/each}

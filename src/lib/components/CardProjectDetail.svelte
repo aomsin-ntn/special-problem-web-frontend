@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { UserRound, CalendarDays, Trash, Download } from 'lucide-svelte';
+    import { UserRound, CalendarDays, Trash, Download, PencilLine } from 'lucide-svelte';
     import { PUBLIC_API_URL } from '$env/static/public';
 
     interface Props {
@@ -14,8 +14,8 @@
         keywords?: string[];
         thumbnail?: string | null;
         downloadCount?: number;
-        showDelete?: boolean;
-        onDelete?: (id: string) => void;
+        showEdit?: boolean;
+        onEdit?: (id: string) => void;
     }
 
     let {
@@ -30,15 +30,15 @@
         keywords = [],
         thumbnail = null,
         downloadCount = 0,
-        showDelete = false,
-        onDelete
+        showEdit = false,
+        onEdit
     }: Props = $props();
 
-    const handleDelete = (e: MouseEvent) => {
+    const handleEdit = (e: MouseEvent) => {
         e.preventDefault();
-        e.stopPropagation(); // 🚀 สำคัญมาก: ป้องกันไม่ให้ทะลุไปคลิก <a>
-        if (onDelete && id) {
-            onDelete(id);
+        e.stopPropagation(); 
+        if (onEdit && id) {
+            onEdit(id);
         }
     };
 </script>
@@ -101,12 +101,12 @@
         {/if}
     </div>
     
-    {#if showDelete}
+    {#if showEdit}
         <button 
             type="button" 
-            onclick={handleDelete} 
-            class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-lg p-2 transition-all duration-300 md:opacity-0 group-hover:opacity-100 z-10 shadow-sm border-none cursor-pointer" aria-label="Delete project">
-            <Trash class="w-4 h-4 md:w-5 md:h-5" />
+            onclick={handleEdit} 
+            class="absolute top-2 right-2 bg-orange-500 hover:bg-orange-100 text-white rounded-lg p-2 transition-all duration-300 md:opacity-0 group-hover:opacity-100 z-10 shadow-sm border-none cursor-pointer" aria-label="Edit project">
+            <PencilLine class="w-4 h-4 md:w-5 md:h-5" />
         </button>
     {/if}
 </a>

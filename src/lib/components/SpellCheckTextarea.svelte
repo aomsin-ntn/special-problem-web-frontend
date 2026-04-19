@@ -106,8 +106,24 @@
             }
         }
 
-        // Must be sorted ascending so the HTML-building pass is O(n)
-        return instances.sort((a, b) => a.start - b.start);
+        // 1. เรียงลำดับจากซ้ายไปขวา (ตาม Index เริ่มต้น)
+        instances.sort((a, b) => a.start - b.start);
+
+        // 2. 🟢 กรองคำผิดที่มีตำแหน่งซ้อนทับกัน (Overlapping) ออกไป
+        const filteredInstances: ErrorInstance[] = [];
+        let lastEnd = -1;
+        
+        for (const inst of instances) {
+            // ถ้าระยะเริ่มต้นของคำนี้ อยู่หลังจาก หรือเท่ากับ จุดสิ้นสุดของคำก่อนหน้า 
+            // แปลว่าไม่ซ้อนทับกัน จึงจะเก็บไว้แสดงผล
+            if (inst.start >= lastEnd) {
+                filteredInstances.push(inst);
+                lastEnd = inst.end;
+            }
+        }
+
+        // คืนค่าเฉพาะคำที่ปลอดภัยและไม่ทับซ้อนกันไปวาด mirrorHtml
+        return filteredInstances;
     });
 
     // ─── Derived: mirror HTML ─────────────────────────────────────────────────
@@ -429,7 +445,6 @@
     .spell-mirror {
         /* JS copies font/padding/border-width from textarea at runtime */
         color:          inherit;
-        background:     transparent;
         pointer-events: none;
         user-select:    none;
         overflow:       hidden; /* must NOT scroll independently */

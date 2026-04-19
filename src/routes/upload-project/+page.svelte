@@ -3,7 +3,7 @@
 </svelte:head>
 
 <script lang="ts">
-    import { Upload, FileCheckCorner, SquarePen } from 'lucide-svelte';
+    import { Upload, FileCheckCorner, SquarePen, Plus, Trash2 } from 'lucide-svelte';
     import { goto } from '$app/navigation';
     import { PUBLIC_API_URL } from '$env/static/public';
 
@@ -12,6 +12,7 @@
     import FileUploadZone from '$lib/components/FileUploadZone.svelte';
     import PageSelector   from '$lib/components/PageSelector.svelte';
     import OcrForm        from '$lib/components/OcrForm.svelte';
+    import SpellCheckTextarea from '$lib/components/SpellCheckTextarea.svelte';
 
     // ─── Step state ───────────────────────────────────────────────────────────
     let currentStep = $state(1);
@@ -77,10 +78,10 @@
     const togglePageSelection = (pageId: number) => {
         if (selectedPages.includes(pageId)) {
             selectedPages = selectedPages.filter((p) => p !== pageId);
-        } else if (selectedPages.length < 2) {
+        } else if (selectedPages.length < 4) {
             selectedPages = [...selectedPages, pageId];
         } else {
-            alert('คุณสามารถเลือกได้สูงสุด 2 หน้า เท่านั้น');
+            alert('คุณสามารถเลือกได้สูงสุด 4 หน้า เท่านั้น');
         }
     };
 
@@ -90,6 +91,69 @@
     let fileInfo     = $state<FileInfo | null>(null);
     let degreeId     = $state<string | null>(null);
     let advisorId    = $state<string | null>(null);
+
+    let masterFaculties = $state<any[]>([]);
+    let masterDegrees = $state<any[]>([]);
+    let masterAdvisors = $state<any[]>([]);
+
+    let selectedDegreeId = $state<string>('');
+    let selectedFacultyId = $state<string>('');
+    let selectedDepartmentId = $state<string>('');
+    let selectedAdvisors = $state<{advisor_id: string}[]>([{ advisor_id: '' }]);
+
+    let originalOcrPayload = $state<any>(null);
+
+    const addAdvisor = () => selectedAdvisors.push({ advisor_id: '' });
+    const removeAdvisor = (index: number) => selectedAdvisors.splice(index, 1);
+
+    let uniqueDegrees = $derived((() => {
+        if (!masterDegrees) return [];
+        const unique = [];
+        const map = new Map();
+        for (const item of masterDegrees) {
+            if (!map.has(item.degree_id)) {
+                map.set(item.degree_id, true);
+                unique.push(item);
+            }
+        }
+        return unique;
+    })());
+
+    let availableFaculties = $derived((() => {
+        if (!masterFaculties || masterFaculties.length === 0) return [];
+        if (!selectedDegreeId) return masterFaculties;
+        
+        const linkedDeptIds = masterDegrees
+            .filter(d => d.degree_id === selectedDegreeId)
+            .map(d => d.department_id);
+            
+        if (linkedDeptIds.length === 0) return masterFaculties;
+
+        return masterFaculties.filter(item => 
+            item.departments && item.departments.some((dept: any) => linkedDeptIds.includes(dept.department_id))
+        );
+    })());
+    
+    let availableDepartments = $derived((() => {
+        if (!masterFaculties || !selectedFacultyId) return [];
+        const selectedFaculty = masterFaculties.find(f => f?.faculty?.faculty_id === selectedFacultyId);
+        if (!selectedFaculty || !selectedFaculty.departments) return [];
+
+        if (selectedDegreeId) {
+            const linkedDeptIds = masterDegrees
+                .filter(d => d.degree_id === selectedDegreeId)
+                .map(d => d.department_id);
+            if (linkedDeptIds.length > 0) {
+                return selectedFaculty.departments.filter((dept: any) => 
+                    linkedDeptIds.includes(dept.department_id)
+                );
+            }
+        }
+        return selectedFaculty.departments;
+    })());
+
+    const handleDegreeChange = () => { selectedFacultyId = ''; selectedDepartmentId = ''; };
+    const handleFacultyChange = () => { selectedDepartmentId = ''; };
 
     const emptyProjectData = (): ProjectData => ({
         title: '', faculty: '', department: '', degree: '',
@@ -101,6 +165,11 @@
 
     let spellErrors = $state<SpellErrorMap>({});
 
+    let pairedKeywords = $state<{th: string, en: string}[]>([]);
+
+    const addKeyword = () => pairedKeywords.push({ th: '', en: '' });
+    const removeKeyword = (index: number) => pairedKeywords.splice(index, 1);
+
     const extractOcrData = async () => {
         isLoadingOcr = true;
         try {
@@ -111,24 +180,46 @@
             const formData = new FormData();
             formData.append('file', uploadedFile as File);
 
-            const response = await fetch(
-                `${PUBLIC_API_URL}/project/upload?${queryParams}`,
-                { method: 'POST', body: formData, credentials: 'include' },
-            );
-            if (!response.ok) throw new Error('Server error: ' + response.status);
+            const [ocrRes, facRes, degRes, advRes] = await Promise.all([
+                fetch(`${PUBLIC_API_URL}/project/upload?${queryParams}`, { method: 'POST', body: formData, credentials: 'include' }),
+                fetch(`${PUBLIC_API_URL}/project/get_faculty`),
+                fetch(`${PUBLIC_API_URL}/master/degree`),
+                fetch(`${PUBLIC_API_URL}/master/advisor`)
+            ]);
+            if (!ocrRes.ok) throw new Error('Server error: ' + ocrRes.status);
 
-            const data  = await response.json();
-            const errArray = Array.isArray(data.spell_errors) ? data.spell_errors : [];
-            spellErrors = {
-                title_th: errArray,
-                title_en: errArray,
-                abstract_th: errArray,
-                abstract_en: errArray
-            };
+            const data  = await ocrRes.json();
+            masterFaculties = await facRes.json();
+            masterDegrees = await degRes.json();
+            masterAdvisors = await advRes.json();
+
+            const newSpellErrors: SpellErrorMap = {};
+            if (Array.isArray(data.spell_errors)) {
+                data.spell_errors.forEach((err: any) => {
+                    newSpellErrors[err.field] = err.stats?.wrong_words || [];
+                });
+            }
+            spellErrors = newSpellErrors;
+
             fileInfo    = data.file_info   ?? null;
             const form  = data.form_data   ?? {};
             degreeId    = form.degree?.degree_id   ?? null;
             advisorId   = form.advisor?.advisor_id ?? null;
+
+            pairedKeywords = (form.keywords || []).map((kw: any) => ({
+                th: kw.keyword_text_th || '',
+                en: kw.keyword_text_en || ''
+            }));
+
+            selectedDegreeId = form.degree?.degree_id || '';
+            selectedFacultyId = form.faculty?.faculty_id || '';
+            selectedDepartmentId = form.department?.department_id || '';
+            
+            if (form.advisors && form.advisors.length > 0) {
+                selectedAdvisors = form.advisors.map((a: any) => ({ advisor_id: a.advisor_id || '' }));
+            } else {
+                selectedAdvisors = [{ advisor_id: '' }];
+            }
 
             ocrDataThai = {
                 title:        form.title_th                  ?? '',
@@ -136,7 +227,7 @@
                 department:   form.department?.department_name_th ?? '',
                 degree:       form.degree?.degree_name_th    ?? '',
                 academicYear: form.academic_year             ?? '',
-                authors:  (form.students ?? []).map((s: any) => ({ name: s.name_th    ?? '', studentId: s.student_id ?? '' })),
+                authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_th    ?? '', studentId: s.student_id ?? '' })),
                 advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_th ?? '' })),
                 abstract: form.abstract_th ?? '',
                 keywords: (form.keywords ?? []).map((k: any) => k.th ?? ''),
@@ -148,11 +239,15 @@
                 department:   form.department?.department_name_en ?? '',
                 degree:       form.degree?.degree_name_en    ?? '',
                 academicYear: form.academic_year             ?? '',
-                authors:  (form.students ?? []).map((s: any) => ({ name: s.name_en    ?? '', studentId: s.student_id ?? '' })),
+                authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_en    ?? '', studentId: s.student_id ?? '' })),
                 advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_en ?? '' })),
                 abstract: form.abstract_en ?? '',
                 keywords: (form.keywords ?? []).map((k: any) => k.en ?? ''),
             };
+
+            const currentPayload = buildPayload();
+            originalOcrPayload = JSON.parse(JSON.stringify(currentPayload));
+
         } catch (error) {
             console.error('OCR Error:', error);
             alert('OCR processing failed');
@@ -181,45 +276,54 @@
         ) => Array.from({ length: Math.max(thList.length, enList.length) }, (_, i) =>
             mapFn(thList[i] ?? ({ name: '', studentId: '' } as T), enList[i] ?? ({ name: '' } as T), i));
 
-        return {
+        const degObj = masterDegrees.find((d: any) => d.degree_id === selectedDegreeId) || {};
+        const facObj = availableFaculties.find((f: any) => f.faculty?.faculty_id === selectedFacultyId)?.faculty || {};
+        const deptObj = availableDepartments.find((d: any) => d.department_id === selectedDepartmentId) || {};
+
+        const projectData = {
             title_th:      ocrDataThai.title,
             title_en:      ocrDataEnglish.title,
             abstract_th:   ocrDataThai.abstract,
             abstract_en:   ocrDataEnglish.abstract,
             academic_year: ocrDataThai.academicYear,
             degree: {
-                degree_id:      degreeId,
-                degree_name_th: ocrDataThai.degree,
-                degree_name_en: ocrDataEnglish.degree,
+                degree_id: selectedDegreeId || null,
+                degree_name_th: degObj.degree_name_th || '',
+                degree_name_en: degObj.degree_name_en || '',
             },
             department: {
-                department_id:      null,
-                department_name_th: ocrDataThai.department,
-                department_name_en: ocrDataEnglish.department,
+                department_id: selectedDepartmentId || null,
+                department_name_th: deptObj.department_name_th || '',
+                department_name_en: deptObj.department_name_en || '',
             },
             faculty: {
-                faculty_id:      null,
-                faculty_name_th: ocrDataThai.faculty,
-                faculty_name_en: ocrDataEnglish.faculty,
+                faculty_id: selectedFacultyId || null,
+                faculty_name_th: facObj.faculty_name_th || '',
+                faculty_name_en: facObj.faculty_name_en || '',
             },
             students: mergeList(ocrDataThai.authors, ocrDataEnglish.authors, (th, en) => ({
                 student_id:      th.studentId || en.studentId || '',
                 student_name_th: th.name,
                 student_name_en: en.name,
             })),
-            advisors: mergeList(ocrDataThai.advisors, ocrDataEnglish.advisors, (th, en) => ({
-                advisor_id:      advisorId,
-                advisor_name_th: th.name,
-                advisor_name_en: en.name,
+            advisors: selectedAdvisors.map(adv => {
+                const advObj = masterAdvisors.find(a => a.advisor_id === adv.advisor_id) || {};
+                return {
+                    advisor_id: adv.advisor_id || null,
+                    advisor_name_th: advObj.advisor_name_th || '',
+                    advisor_name_en: advObj.advisor_name_en || ''
+                };
+            }),
+            keywords: pairedKeywords.map(kw => ({
+                keyword_text_th: kw.th,
+                keyword_text_en: kw.en
             })),
-            keywords: Array.from(
-                { length: Math.max(ocrDataThai.keywords.length, ocrDataEnglish.keywords.length) },
-                (_, i) => ({
-                    keyword_text_th: ocrDataThai.keywords[i]    ?? '',
-                    keyword_text_en: ocrDataEnglish.keywords[i] ?? '',
-                }),
-            ),
             file_info: fileInfo,
+        };
+
+        return {
+            data: projectData,
+            old_data: originalOcrPayload ? originalOcrPayload.data : null 
         };
     };
 
@@ -341,6 +445,110 @@
                                 <OcrForm bind:data={ocrDataEnglish} lang="en" {spellErrors} />
                             </div>
                         </div>
+
+                        <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
+                            <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
+                                3.3 ข้อมูลอ้างอิง (Master Data)
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="form-control md:col-span-2">
+                                    <label for="degreeSelect" class="label"><span class="label-text font-bold text-gray-700">หลักสูตร (Degree)</span></label>
+                                    <select id="degreeSelect" bind:value={selectedDegreeId} onchange={handleDegreeChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
+                                        <option value="" disabled>-- เลือกหลักสูตร --</option>
+                                        {#each uniqueDegrees as degree}
+                                            <option value={degree.degree_id}>{degree.degree_name_th} ({degree.degree_name_en})</option>
+                                        {/each}
+                                    </select>
+                                </div>
+
+                                <div class="form-control">
+                                    <label for="facultySelect" class="label"><span class="label-text font-bold text-gray-700">คณะ (Faculty)</span></label>
+                                    <select id="facultySelect" bind:value={selectedFacultyId} onchange={handleFacultyChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedDegreeId}>
+                                        <option value="" disabled>-- เลือกคณะ --</option>
+                                        {#each availableFaculties as item}
+                                            <option value={item.faculty.faculty_id}>{item.faculty.faculty_name_th} ({item.faculty.faculty_name_en})</option>
+                                        {/each}
+                                    </select>
+                                </div>
+
+                                <div class="form-control">
+                                    <label for="deptSelect" class="label"><span class="label-text font-bold text-gray-700">ภาควิชา (Department)</span></label>
+                                    <select id="deptSelect" bind:value={selectedDepartmentId} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedFacultyId}>
+                                        <option value="" disabled>-- เลือกภาควิชา --</option>
+                                        {#each availableDepartments as dept}
+                                            <option value={dept.department_id}>{dept.department_name_th} ({dept.department_name_en})</option>
+                                        {/each}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="divider my-6"></div>
+
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="label-text font-bold text-gray-700">อาจารย์ที่ปรึกษา (Advisors)</span>
+                                <button type="button" class="btn btn-sm btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white" onclick={addAdvisor}>
+                                    <Plus class="w-4 h-4"/> เพิ่มอาจารย์
+                                </button>
+                            </div>
+                            <div class="flex flex-col gap-3">
+                                {#each selectedAdvisors as advisor, index}
+                                    <div class="flex items-center gap-2 w-full">
+                                        <select bind:value={advisor.advisor_id} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
+                                            <option value="" disabled>-- เลือกอาจารย์ที่ปรึกษา --</option>
+                                            {#each masterAdvisors as masterAdv}
+                                                <option value={masterAdv.advisor_id}>{masterAdv.advisor_name_th} ({masterAdv.advisor_name_en})</option>
+                                            {/each}
+                                        </select>
+                                        <button type="button" class="btn btn-square btn-error btn-outline" onclick={() => removeAdvisor(index)} disabled={selectedAdvisors.length === 1}>
+                                            <Trash2 class="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                {/each}
+                            </div>
+                        </div>
+                            
+                        <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-orange-200 pb-3 mb-6 gap-3">
+                                <h3 class="text-base md:text-lg font-bold text-orange-800">
+                                    3.4 คำสำคัญ (Keywords)
+                                </h3>
+                                <button type="button" onclick={addKeyword} class="btn btn-sm btn-outline btn-primary bg-white">
+                                    <Plus class="w-4 h-4"/> เพิ่มคำสำคัญ
+                                </button>
+                            </div>
+                            
+                            <div class="flex flex-col gap-4">
+                                {#each pairedKeywords as kw, index}
+                                    <div class="flex flex-col md:flex-row gap-4 items-start md:items-center p-4 ">
+                                        <div class="flex-1 w-full">
+                                            <label for="keyword-th-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">คำสำคัญ (TH)</span></label>
+                                            <SpellCheckTextarea 
+                                                bind:value={kw.th} 
+                                                rows={1}
+                                                inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
+                                            />
+                                        </div>
+                                        <div class="flex-1 w-full">
+                                            <label for="keyword-en-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">Keyword (EN)</span></label>
+                                            <SpellCheckTextarea 
+                                                bind:value={kw.en} 
+                                                rows={1}
+                                                inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
+                                            />
+                                        </div>
+                                        <button type="button" class="btn btn-square btn-error btn-outline md:mt-7 shrink-0" onclick={() => removeKeyword(index)}>
+                                            <Trash2 class="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                {/each}
+
+                                {#if pairedKeywords.length === 0}
+                                    <p class="text-center text-gray-500 py-4">ยังไม่มีคำสำคัญ</p>
+                                {/if}
+                            </div>
+                        </div>
+                        
                     {/if}
                 </div>
 

@@ -53,7 +53,7 @@
                 <ul class="list-disc list-inside flex flex-col gap-1.5 text-sm text-gray-700">
                     <li>หน้าที่เลือกต้องมีโครงสร้างข้อมูลตรงกับหน้าตัวอย่าง</li>
                     <li>
-                        ต้องเลือก <strong>ทั้งหน้าภาษาไทย และหน้าภาษาอังกฤษ</strong> รวมเป็น 2 หน้า
+                        ต้องเลือก <strong>ทั้งหน้าภาษาไทย และหน้าภาษาอังกฤษ</strong> 
                     </li>
                 </ul>
             </div>
@@ -62,7 +62,7 @@
         <!-- Page thumbnail grid -->
         <div class="text-center mb-6">
             <p class="text-base md:text-lg font-bold text-gray-800">
-                คลิกเลือกหน้าจากไฟล์ของคุณ (เลือก 2 หน้า)
+                คลิกเลือกหน้าบทคัดย่อจากไฟล์ของคุณ (เลือกได้สูงสุด 4 หน้า)
             </p>
         </div>
 
@@ -128,9 +128,9 @@
         <button
             class="w-full md:w-1/2 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md"
             onclick={onNext}
-            disabled={selectedPages.length !== 2}
+            disabled={selectedPages.length < 1}
         >
-            ถัดไป (เลือกแล้ว {selectedPages.length}/2)
+            ถัดไป (เลือกแล้ว {selectedPages.length} หน้า)
         </button>
     </div>
 </section>
