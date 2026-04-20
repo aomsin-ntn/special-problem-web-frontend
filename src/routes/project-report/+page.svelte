@@ -16,7 +16,7 @@
     let sortBy = $state<string>('student_id-asc');
 
     let currentPage = $state<number>(1);
-    const itemsPerPage = 5;
+    const itemsPerPage = 20;
 
     let totalItems = $state<number>(0);
     let totalPages = $state<number>(1);
@@ -129,13 +129,13 @@
                     queryParams.append('order', order);
                 }
 
-                // 🟢 เรียก API ไปที่ Endpoint /report ที่มีตัวล็อก RBAC
+                // เรียก API ไปที่ Endpoint /report ที่มีตัวล็อก RBAC
                 const response = await fetch(`${PUBLIC_API_URL}/project/report?${queryParams.toString()}`, {
                     credentials: 'include'
                 });
 
                 if (response.status === 403 || response.status === 401) {
-                    errorMessage = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะ Staff และ Professor)";
+                    errorMessage = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะเจ้าหน้าที่และอาจารย์)";
                     projects = [];
                     return;
                 }
@@ -173,7 +173,7 @@
         </div>
 
         <div class="p-6 bg-gray-100">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 
                 <div class="flex flex-col">
                     <label for="year-filter" class="text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา</label>
@@ -295,7 +295,7 @@
                                     <div class="text-xs text-gray-700 mt-1 line-clamp-1">{item.department?.department_name_th}</div>
                                 </td>
                                 <td class="py-4 text-gray-700">{item.project.academic_year}</td>
-                                <td class="py-4 text-gray-700 text-sm">{formatDate(item.project.created_at)}</td>
+                                <td class="py-4 text-gray-700 text-xs">{formatDate(item.project.created_at)}</td>
                                 <td class="py-4 text-center">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                         {item.project.downloaded_count}
