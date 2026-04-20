@@ -57,10 +57,10 @@
     let isMobileFilterOpen = $state<boolean>(false);
 
     const sortOptions: SortOption[] = [
-        { label: 'เรียงตามดาวน์โหลดมากที่สุด', value: 'downloaded_count-desc' },
-        { label: 'เรียงตามดาวน์โหลดน้อยที่สุด', value: 'downloaded_count-asc' },
-        { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'created_at-asc' },
-        { label: 'เรียงตามอัปโหลดเก่า > ใหม่', value: 'created_at-desc' },
+        { label: 'เรียงตามดาวน์โหลดมากสุด > น้อยสุด', value: 'downloaded_count-desc' },
+        { label: 'เรียงตามดาวน์โหลดน้อยสุด > มากสุด', value: 'downloaded_count-asc' },
+        { label: 'เรียงตามอัปโหลดใหม่ > เก่า', value: 'created_at-desc' },
+        { label: 'เรียงตามอัปโหลดเก่า > ใหม่', value: 'created_at-asc' },
     ];
 
     const selectedSortLabel = $derived(sortOptions.find(opt => opt.value === sortBy)?.label || sortBy);

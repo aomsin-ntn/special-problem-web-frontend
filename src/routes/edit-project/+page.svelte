@@ -79,7 +79,7 @@
             try {
                 // ดึงข้อมูลโปรเจกต์ และ Master Data พร้อมกันเพื่อความรวดเร็ว
                 const [projRes, facRes, degRes, advRes] = await Promise.all([
-                    fetch(`${PUBLIC_API_URL}/project/edit-data/${projectId}`, { credentials: 'include' }),
+                    fetch(`${PUBLIC_API_URL}/project/edit_project/${projectId}`, { credentials: 'include' }),
                     fetch(`${PUBLIC_API_URL}/project/get_faculty`), // API ที่คุณมีอยู่แล้วสำหรับดึงคณะและภาควิชา
                     fetch(`${PUBLIC_API_URL}/master/degree`),      // สมมติ URL ต้องแก้ให้ตรงกับ Backend ของคุณ
                     fetch(`${PUBLIC_API_URL}/master/advisor`)      // สมมติ URL ต้องแก้ให้ตรงกับ Backend ของคุณ
@@ -94,7 +94,8 @@
                     throw new Error('Failed to fetch project data');
                 }
 
-                const rawProject = await projRes.json();
+                const rawResponse = await projRes.json();
+                const rawProject = rawResponse[0];
                 
                 // จัดเตรียมโครงสร้าง Data ให้พร้อม Binding กับ Form
                 project = {
@@ -146,7 +147,7 @@
         isSaving = true;
 
         try {
-            // 1. ตรวจสอบข้อมูลเบื้องต้น (Validation)
+
             if (!project.title_th || !project.degree.degree_id || !project.department.department_id) {
                 Swal.fire({
                     title: 'ข้อมูลไม่ครบถ้วน', 
@@ -158,30 +159,55 @@
                 return;
             }
 
-            // 2. จัดระเบียบข้อมูล (Payload) ให้ตรงกับ Schema ของ Backend (ProjectSubmitRequest)
+            // 2. จัดระเบียบข้อมูลให้ตรงกับ Schema ของ Backend
             const payload = {
                 title_th: project.title_th,
                 title_en: project.title_en,
                 abstract_th: project.abstract_th,
                 abstract_en: project.abstract_en,
                 academic_year: project.academic_year,
-                // แพ็กเป็น Object ตามที่ Schema ต้องการ
-                degree: { degree_id: project.degree.degree_id },
-                department: { department_id: project.department.department_id },
-                faculty: { faculty_id: project.faculty.faculty_id },
-                // กรองและส่งเฉพาะข้อมูลที่จำเป็น (ป้องกันส่ง Field ขยะจาก DB กลับไป)
+                
+                degree: { 
+                    degree_id: project.degree?.degree_id || null,
+                    degree_name_th: project.degree?.degree_name_th || "",
+                    degree_name_en: project.degree?.degree_name_en || ""
+                },
+                department: { 
+                    department_id: project.department?.department_id || null,
+                    department_name_th: project.department?.department_name_th || "",
+                    department_name_en: project.department?.department_name_en || ""
+                },
+                faculty: { 
+                    faculty_id: project.faculty?.faculty_id || null,
+                    faculty_name_th: project.faculty?.faculty_name_th || "",
+                    faculty_name_en: project.faculty?.faculty_name_en || ""
+                },
                 advisors: project.advisors.map((adv: any) => ({ 
-                    advisor_id: adv.advisor_id 
+                    advisor_id: adv.advisor_id || null,
+                    advisor_name_th: adv.advisor_name_th || "",
+                    advisor_name_en: adv.advisor_name_en || ""
                 })),
                 keywords: project.keywords.map((kw: any) => ({ 
-                    keyword_text_th: kw.keyword_text_th, 
-                    keyword_text_en: kw.keyword_text_en 
+                    keyword_id: kw.keyword_id || null,
+                    keyword_text_th: kw.keyword_text_th || "", 
+                    keyword_text_en: kw.keyword_text_en || "" 
                 })),
+                
+                students: project.authors ? project.authors.map((author: any) => ({
+                    student_id: author.student_id || "",
+                    student_name_th: author.user_name_th || "",
+                    student_name_en: author.user_name_en || ""
+                })) : [],
+                file_info: {
+                    file_path: project.project_file?.file_path || "",
+                    save_name: project.project_file?.file_name || "",
+                    thumbnail_path: project.project_file?.thumbnail_path || ""
+                }
             };
 
             // 3. ส่งข้อมูลไปอัปเดตที่ FastAPI
-            const res = await fetch(`${PUBLIC_API_URL}/project/update/${projectId}`, {
-                method: 'PUT',
+            const res = await fetch(`${PUBLIC_API_URL}/project/save_update_project_data/${projectId}`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
