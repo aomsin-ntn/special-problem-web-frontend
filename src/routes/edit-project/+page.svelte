@@ -211,7 +211,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                credentials: 'include', // อย่าลืมบรรทัดนี้ เพื่อให้ Backend เช็ค Token/Session ได้
+                credentials: 'include', 
                 body: JSON.stringify(payload)
             });
 

@@ -10,6 +10,7 @@ interface User {
     id: string;
     student_id: string;
     email: string;
+    role: string;
 }
 
 export const authStore = writable<AuthState>({
