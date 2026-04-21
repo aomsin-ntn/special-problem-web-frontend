@@ -14,6 +14,7 @@
     });
 
 	const isLoginPage = $derived(page.url.pathname === '/login');
+	const isFirstLoginPage = $derived(page.url.pathname.startsWith('/first-login/'));
 
 </script>
 
@@ -22,7 +23,7 @@
 	<title>Special Problem Web App</title>
 </svelte:head>
 
-{#if !isLoginPage}
+{#if !isLoginPage && !isFirstLoginPage}
 	<Navbar />
 {/if}
 
@@ -31,6 +32,6 @@
 	{@render children()}
 </div>
 
-{#if !isLoginPage}
+{#if !isLoginPage && !isFirstLoginPage}
 	<Footer />
 {/if}

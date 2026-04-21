@@ -35,7 +35,7 @@
 
 	$effect(() => {
 		// ถ้าไม่มีข้อมูลผู้ใช้ในระบบ ให้ Redirect ไปหน้า Login
-		if (!$authStore.user) {
+		if (!$authStore.isLoggedIn) {
 			goto('/login');
 			return;
 		}
