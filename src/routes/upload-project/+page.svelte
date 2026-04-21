@@ -6,13 +6,16 @@
     import { Upload, FileCheckCorner, SquarePen, Plus, Trash2 } from 'lucide-svelte';
     import { goto } from '$app/navigation';
     import { PUBLIC_API_URL } from '$env/static/public';
-
+    import { authStore } from '$lib/stores/authStore';
     import type { ProjectData, FileInfo, PageThumbnail, SpellErrorMap } from '$lib/types';
     import StepIndicator  from '$lib/components/StepIndicator.svelte';
     import FileUploadZone from '$lib/components/FileUploadZone.svelte';
     import PageSelector   from '$lib/components/PageSelector.svelte';
     import OcrForm        from '$lib/components/OcrForm.svelte';
     import SpellCheckTextarea from '$lib/components/SpellCheckTextarea.svelte';
+    import Swal from 'sweetalert2';
+
+    let isAccessDenied = $derived($authStore.user && $authStore.user.role !== 'student');
 
     // ─── Step state ───────────────────────────────────────────────────────────
     let currentStep = $state(1);
@@ -60,7 +63,7 @@
             pageThumbnails = tempThumbnails;
         } catch (error) {
             console.error('PDF Error:', error);
-            alert('เกิดข้อผิดพลาดในการอ่านไฟล์ PDF');
+            Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการอ่านไฟล์ PDF', 'error');
             uploadedFile = null;
         } finally {
             isGeneratingThumbnails = false;
@@ -81,7 +84,7 @@
         } else if (selectedPages.length < 4) {
             selectedPages = [...selectedPages, pageId];
         } else {
-            alert('คุณสามารถเลือกได้สูงสุด 4 หน้า เท่านั้น');
+            Swal.fire('ข้อผิดพลาด', 'คุณสามารถเลือกได้สูงสุด 4 หน้า เท่านั้น', 'error');
         }
     };
 
@@ -250,7 +253,7 @@
 
         } catch (error) {
             console.error('OCR Error:', error);
-            alert('OCR processing failed');
+            Swal.fire('ข้อผิดพลาด', 'OCR processing failed', 'error');
             currentStep = 2;
         } finally {
             isLoadingOcr = false;
@@ -329,7 +332,10 @@
 
     const handleSubmit = async (event: SubmitEvent) => {
         event.preventDefault();
-        if (!fileInfo) { alert('ไม่พบข้อมูลไฟล์อ้างอิง'); return; }
+        if (!fileInfo) { 
+            Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลไฟล์อ้างอิง', 'error'); 
+            return; 
+        }
         isSaving = true;
         try {
             const response = await fetch(`${PUBLIC_API_URL}/project/save`, {
@@ -340,7 +346,13 @@
             });
             if (!response.ok) throw new Error('Failed to save: ' + response.status);
 
-            alert('บันทึกข้อมูลโปรเจกต์สำเร็จ');
+            Swal.fire({
+                    title: 'บันทึกสำเร็จ!',
+                    text: 'บันทึกข้อมูลโปรเจกต์สำเร็จ',
+                    icon: 'success',
+                    confirmButtonColor: '#f97316'
+                });
+
             currentStep   = 1;
             uploadedFile  = null;
             selectedPages = [];
@@ -348,7 +360,7 @@
             await goto('/profile');
         } catch (error) {
             console.error('Save Error:', error);
-            alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
         } finally {
             isSaving = false;
         }
@@ -357,226 +369,247 @@
 
 <main class="min-h-screen bg-white px-4 md:px-8 py-10 md:py-16 text-black">
 
-    <!-- Page header -->
-    <header class="text-center mb-8 md:mb-12">
-        <h1 class="text-2xl md:text-3xl font-bold text-black">อัปโหลดปัญหาพิเศษ</h1>
-    </header>
-
-    <!-- Step progress bar -->
-    <StepIndicator {currentStep} {stepItems} />
-
-    <!-- ── Step 1: Upload ─────────────────────────────────────────────────── -->
-    {#if currentStep === 1}
-        <FileUploadZone
-            {fileDetails}
-            {isGeneratingThumbnails}
-            isNextDisabled={!uploadedFile || isGeneratingThumbnails}
-            onFileSelected={handleFileSelected}
-            onNext={nextStep}
-        />
-    {/if}
-
-    <!-- ── Step 2: Page selection ─────────────────────────────────────────── -->
-    {#if currentStep === 2}
-        <PageSelector
-            {pageThumbnails}
-            {selectedPages}
-            onTogglePage={togglePageSelection}
-            onPrev={prevStep}
-            onNext={nextStep}
-        />
-    {/if}
-
-    <!-- ── Step 3: OCR review & submit ───────────────────────────────────── -->
-    {#if currentStep === 3}
-
-        <!-- Saving overlay -->
-        {#if isSaving}
-            <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm transition-all duration-300">
-                <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95">
-                    <span class="loading loading-spinner loading-lg text-orange-500"></span>
-                    <p class="text-xl font-bold text-gray-800 animate-pulse">กำลังบันทึกข้อมูล...</p>
-                    <p class="text-sm text-gray-500">กรุณารอสักครู่ ห้ามปิดหรือรีเฟรชหน้าต่างนี้</p>
-                </div>
+    {#if isAccessDenied}
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-2xl md:text-3xl font-bold text-black">อัปโหลดปัญหาพิเศษ</h1>
+        </header>
+        <div class="max-w-3xl mx-auto bg-white p-10 rounded-xl shadow-md border border-red-200 text-center">
+            <div class="text-red-500 mb-4">
+                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
             </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
+            <p class="text-gray-600 mb-6">เฉพาะนักศึกษาเท่านั้นที่สามารถอัปโหลดปัญหาพิเศษได้</p>
+            <button 
+                onclick={() => goto('/')}
+                class="btn btn-primary"
+            >
+                กลับสู่หน้าหลัก
+            </button>
+        </div>
+    {:else}
+        <!-- Page header -->
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-2xl md:text-3xl font-bold text-black">อัปโหลดปัญหาพิเศษ</h1>
+        </header>
+
+        <!-- Step progress bar -->
+        <StepIndicator {currentStep} {stepItems} />
+
+        <!-- ── Step 1: Upload ─────────────────────────────────────────────────── -->
+        {#if currentStep === 1}
+            <FileUploadZone
+                {fileDetails}
+                {isGeneratingThumbnails}
+                isNextDisabled={!uploadedFile || isGeneratingThumbnails}
+                onFileSelected={handleFileSelected}
+                onNext={nextStep}
+            />
         {/if}
 
-        <section class="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-            <form onsubmit={handleSubmit}>
-                <div class="bg-white border border-gray-500 shadow-sm rounded-2xl p-6 md:p-10">
-                    <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-black text-center mb-10">
-                        ขั้นตอนที่ 3 : ตรวจสอบและแก้ไขข้อมูล OCR
-                    </h2>
+        <!-- ── Step 2: Page selection ─────────────────────────────────────────── -->
+        {#if currentStep === 2}
+            <PageSelector
+                {pageThumbnails}
+                {selectedPages}
+                onTogglePage={togglePageSelection}
+                onPrev={prevStep}
+                onNext={nextStep}
+            />
+        {/if}
 
-                    {#if isLoadingOcr}
-                        <!-- Skeleton loader -->
-                        <div class="flex flex-col items-center gap-4 mb-8">
-                            <span class="loading loading-spinner loading-lg text-orange-500"></span>
-                            <p class="text-orange-600 font-bold animate-pulse">ระบบกำลังอ่านและสกัดข้อมูลจาก PDF...</p>
-                        </div>
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {#each Array(2) as _}
-                                <div class="border border-gray-200 rounded-xl p-6 bg-gray-50 animate-pulse">
-                                    <div class="h-6 w-48 bg-gray-300 rounded mb-8"></div>
-                                    <div class="space-y-6">
-                                        <div class="h-14 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                            <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
+        <!-- ── Step 3: OCR review & submit ───────────────────────────────────── -->
+        {#if currentStep === 3}
+
+            <!-- Saving overlay -->
+            {#if isSaving}
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm transition-all duration-300">
+                    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95">
+                        <span class="loading loading-spinner loading-lg text-orange-500"></span>
+                        <p class="text-xl font-bold text-gray-800 animate-pulse">กำลังบันทึกข้อมูล...</p>
+                        <p class="text-sm text-gray-500">กรุณารอสักครู่ ห้ามปิดหรือรีเฟรชหน้าต่างนี้</p>
+                    </div>
+                </div>
+            {/if}
+
+            <section class="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
+                <form onsubmit={handleSubmit}>
+                    <div class="bg-white border border-gray-500 shadow-sm rounded-2xl p-6 md:p-10">
+                        <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-black text-center mb-10">
+                            ขั้นตอนที่ 3 : ตรวจสอบและแก้ไขข้อมูล OCR
+                        </h2>
+
+                        {#if isLoadingOcr}
+                            <!-- Skeleton loader -->
+                            <div class="flex flex-col items-center gap-4 mb-8">
+                                <span class="loading loading-spinner loading-lg text-orange-500"></span>
+                                <p class="text-orange-600 font-bold animate-pulse">ระบบกำลังอ่านและสกัดข้อมูลจาก PDF...</p>
+                            </div>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {#each Array(2) as _}
+                                    <div class="border border-gray-200 rounded-xl p-6 bg-gray-50 animate-pulse">
+                                        <div class="h-6 w-48 bg-gray-300 rounded mb-8"></div>
+                                        <div class="space-y-6">
+                                            <div class="h-14 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                                <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                            </div>
+                                            <div class="h-32 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                            <div class="h-16 bg-white border border-gray-200 rounded-lg w-full"></div>
                                         </div>
-                                        <div class="h-32 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                        <div class="h-16 bg-white border border-gray-200 rounded-lg w-full"></div>
                                     </div>
+                                {/each}
+                            </div>
+                        {:else}
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                                <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
+                                    <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
+                                        3.1 ข้อมูลภาษาไทย
+                                    </h3>
+                                    <OcrForm bind:data={ocrDataThai} lang="th" {spellErrors} />
                                 </div>
-                            {/each}
-                        </div>
-                    {:else}
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                            <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
+                                <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
+                                    <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
+                                        3.2 ข้อมูลภาษาอังกฤษ
+                                    </h3>
+                                    <OcrForm bind:data={ocrDataEnglish} lang="en" {spellErrors} />
+                                </div>
+                            </div>
+
+                            <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
                                 <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
-                                    3.1 ข้อมูลภาษาไทย
+                                    3.3 ข้อมูลอ้างอิง (Master Data)
                                 </h3>
-                                <OcrForm bind:data={ocrDataThai} lang="th" {spellErrors} />
-                            </div>
-                            <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
-                                <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
-                                    3.2 ข้อมูลภาษาอังกฤษ
-                                </h3>
-                                <OcrForm bind:data={ocrDataEnglish} lang="en" {spellErrors} />
-                            </div>
-                        </div>
-
-                        <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
-                            <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
-                                3.3 ข้อมูลอ้างอิง (Master Data)
-                            </h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="form-control md:col-span-2">
-                                    <label for="degreeSelect" class="label"><span class="label-text font-bold text-gray-700">หลักสูตร (Degree)</span></label>
-                                    <select id="degreeSelect" bind:value={selectedDegreeId} onchange={handleDegreeChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
-                                        <option value="" disabled>-- เลือกหลักสูตร --</option>
-                                        {#each uniqueDegrees as degree}
-                                            <option value={degree.degree_id}>{degree.degree_name_th} ({degree.degree_name_en})</option>
-                                        {/each}
-                                    </select>
-                                </div>
-
-                                <div class="form-control">
-                                    <label for="facultySelect" class="label"><span class="label-text font-bold text-gray-700">คณะ (Faculty)</span></label>
-                                    <select id="facultySelect" bind:value={selectedFacultyId} onchange={handleFacultyChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedDegreeId}>
-                                        <option value="" disabled>-- เลือกคณะ --</option>
-                                        {#each availableFaculties as item}
-                                            <option value={item.faculty.faculty_id}>{item.faculty.faculty_name_th} ({item.faculty.faculty_name_en})</option>
-                                        {/each}
-                                    </select>
-                                </div>
-
-                                <div class="form-control">
-                                    <label for="deptSelect" class="label"><span class="label-text font-bold text-gray-700">ภาควิชา (Department)</span></label>
-                                    <select id="deptSelect" bind:value={selectedDepartmentId} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedFacultyId}>
-                                        <option value="" disabled>-- เลือกภาควิชา --</option>
-                                        {#each availableDepartments as dept}
-                                            <option value={dept.department_id}>{dept.department_name_th} ({dept.department_name_en})</option>
-                                        {/each}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="divider my-6"></div>
-
-                            <div class="flex justify-between items-center mb-4">
-                                <span class="label-text font-bold text-gray-700">อาจารย์ที่ปรึกษา (Advisors)</span>
-                                <button type="button" class="btn btn-sm btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white" onclick={addAdvisor}>
-                                    <Plus class="w-4 h-4"/> เพิ่มอาจารย์
-                                </button>
-                            </div>
-                            <div class="flex flex-col gap-3">
-                                {#each selectedAdvisors as advisor, index}
-                                    <div class="flex items-center gap-2 w-full">
-                                        <select bind:value={advisor.advisor_id} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
-                                            <option value="" disabled>-- เลือกอาจารย์ที่ปรึกษา --</option>
-                                            {#each masterAdvisors as masterAdv}
-                                                <option value={masterAdv.advisor_id}>{masterAdv.advisor_name_th} ({masterAdv.advisor_name_en})</option>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="form-control md:col-span-2">
+                                        <label for="degreeSelect" class="label"><span class="label-text font-bold text-gray-700">หลักสูตร (Degree)</span></label>
+                                        <select id="degreeSelect" bind:value={selectedDegreeId} onchange={handleDegreeChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
+                                            <option value="" disabled>-- เลือกหลักสูตร --</option>
+                                            {#each uniqueDegrees as degree}
+                                                <option value={degree.degree_id}>{degree.degree_name_th} ({degree.degree_name_en})</option>
                                             {/each}
                                         </select>
-                                        <button type="button" class="btn btn-square btn-error btn-outline" onclick={() => removeAdvisor(index)} disabled={selectedAdvisors.length === 1}>
-                                            <Trash2 class="w-5 h-5" />
-                                        </button>
                                     </div>
-                                {/each}
-                            </div>
-                        </div>
-                            
-                        <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-orange-200 pb-3 mb-6 gap-3">
-                                <h3 class="text-base md:text-lg font-bold text-orange-800">
-                                    3.4 คำสำคัญ (Keywords)
-                                </h3>
-                                <button type="button" onclick={addKeyword} class="btn btn-sm btn-outline btn-primary bg-white">
-                                    <Plus class="w-4 h-4"/> เพิ่มคำสำคัญ
-                                </button>
-                            </div>
-                            
-                            <div class="flex flex-col gap-4">
-                                {#each pairedKeywords as kw, index}
-                                    <div class="flex flex-col md:flex-row gap-4 items-start md:items-center p-4 ">
-                                        <div class="flex-1 w-full">
-                                            <label for="keyword-th-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">คำสำคัญ (TH)</span></label>
-                                            <SpellCheckTextarea 
-                                                bind:value={kw.th} 
-                                                rows={1}
-                                                inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
-                                            />
-                                        </div>
-                                        <div class="flex-1 w-full">
-                                            <label for="keyword-en-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">Keyword (EN)</span></label>
-                                            <SpellCheckTextarea 
-                                                bind:value={kw.en} 
-                                                rows={1}
-                                                inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
-                                            />
-                                        </div>
-                                        <button type="button" class="btn btn-square btn-error btn-outline md:mt-7 shrink-0" onclick={() => removeKeyword(index)}>
-                                            <Trash2 class="w-5 h-5" />
-                                        </button>
+
+                                    <div class="form-control">
+                                        <label for="facultySelect" class="label"><span class="label-text font-bold text-gray-700">คณะ (Faculty)</span></label>
+                                        <select id="facultySelect" bind:value={selectedFacultyId} onchange={handleFacultyChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedDegreeId}>
+                                            <option value="" disabled>-- เลือกคณะ --</option>
+                                            {#each availableFaculties as item}
+                                                <option value={item.faculty.faculty_id}>{item.faculty.faculty_name_th} ({item.faculty.faculty_name_en})</option>
+                                            {/each}
+                                        </select>
                                     </div>
-                                {/each}
 
-                                {#if pairedKeywords.length === 0}
-                                    <p class="text-center text-gray-500 py-4">ยังไม่มีคำสำคัญ</p>
-                                {/if}
+                                    <div class="form-control">
+                                        <label for="deptSelect" class="label"><span class="label-text font-bold text-gray-700">ภาควิชา (Department)</span></label>
+                                        <select id="deptSelect" bind:value={selectedDepartmentId} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedFacultyId}>
+                                            <option value="" disabled>-- เลือกภาควิชา --</option>
+                                            {#each availableDepartments as dept}
+                                                <option value={dept.department_id}>{dept.department_name_th} ({dept.department_name_en})</option>
+                                            {/each}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="divider my-6"></div>
+
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="label-text font-bold text-gray-700">อาจารย์ที่ปรึกษา (Advisors)</span>
+                                    <button type="button" class="btn btn-sm btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white" onclick={addAdvisor}>
+                                        <Plus class="w-4 h-4"/> เพิ่มอาจารย์
+                                    </button>
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    {#each selectedAdvisors as advisor, index}
+                                        <div class="flex items-center gap-2 w-full">
+                                            <select bind:value={advisor.advisor_id} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
+                                                <option value="" disabled>-- เลือกอาจารย์ที่ปรึกษา --</option>
+                                                {#each masterAdvisors as masterAdv}
+                                                    <option value={masterAdv.advisor_id}>{masterAdv.advisor_name_th} ({masterAdv.advisor_name_en})</option>
+                                                {/each}
+                                            </select>
+                                            <button type="button" class="btn btn-square btn-error btn-outline" onclick={() => removeAdvisor(index)} disabled={selectedAdvisors.length === 1}>
+                                                <Trash2 class="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    {/each}
+                                </div>
                             </div>
-                        </div>
-                        
-                    {/if}
-                </div>
+                                
+                            <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-orange-200 pb-3 mb-6 gap-3">
+                                    <h3 class="text-base md:text-lg font-bold text-orange-800">
+                                        3.4 คำสำคัญ (Keywords)
+                                    </h3>
+                                    <button type="button" onclick={addKeyword} class="btn btn-sm btn-outline btn-primary bg-white">
+                                        <Plus class="w-4 h-4"/> เพิ่มคำสำคัญ
+                                    </button>
+                                </div>
+                                
+                                <div class="flex flex-col gap-4">
+                                    {#each pairedKeywords as kw, index}
+                                        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center p-4 ">
+                                            <div class="flex-1 w-full">
+                                                <label for="keyword-th-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">คำสำคัญ (TH)</span></label>
+                                                <SpellCheckTextarea 
+                                                    bind:value={kw.th} 
+                                                    rows={1}
+                                                    inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
+                                                />
+                                            </div>
+                                            <div class="flex-1 w-full">
+                                                <label for="keyword-en-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">Keyword (EN)</span></label>
+                                                <SpellCheckTextarea 
+                                                    bind:value={kw.en} 
+                                                    rows={1}
+                                                    inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
+                                                />
+                                            </div>
+                                            <button type="button" class="btn btn-square btn-error btn-outline md:mt-7 shrink-0" onclick={() => removeKeyword(index)}>
+                                                <Trash2 class="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    {/each}
 
-                <!-- Navigation buttons -->
-                <div class="max-w-7xl mx-auto flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-8 mt-8">
-                    <button
-                        type="button"
-                        class="btn btn-outline w-full md:w-1/3 text-lg h-14 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 rounded-xl bg-white shadow-sm"
-                        onclick={prevStep}
-                        disabled={isLoadingOcr || isSaving}
-                    >
-                        ย้อนกลับ
-                    </button>
-                    <button
-                        type="submit"
-                        class="w-full md:w-2/3 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 shadow-md flex items-center justify-center gap-2"
-                        disabled={isLoadingOcr || isSaving}
-                    >
-                        {#if isLoadingOcr}
-                            <span class="loading loading-spinner loading-sm"></span> กำลังอ่านข้อมูล...
-                        {:else if isSaving}
-                            <span class="loading loading-spinner loading-sm"></span> กำลังบันทึก...
-                        {:else}
-                            <FileCheckCorner class="h-5 w-5" /> บันทึกข้อมูล
+                                    {#if pairedKeywords.length === 0}
+                                        <p class="text-center text-gray-500 py-4">ยังไม่มีคำสำคัญ</p>
+                                    {/if}
+                                </div>
+                            </div>
+                            
                         {/if}
-                    </button>
-                </div>
-            </form>
-        </section>
+                    </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="max-w-7xl mx-auto flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-8 mt-8">
+                        <button
+                            type="button"
+                            class="btn btn-outline w-full md:w-1/3 text-lg h-14 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 rounded-xl bg-white shadow-sm"
+                            onclick={prevStep}
+                            disabled={isLoadingOcr || isSaving}
+                        >
+                            ย้อนกลับ
+                        </button>
+                        <button
+                            type="submit"
+                            class="w-full md:w-2/3 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 shadow-md flex items-center justify-center gap-2"
+                            disabled={isLoadingOcr || isSaving}
+                        >
+                            {#if isLoadingOcr}
+                                <span class="loading loading-spinner loading-sm"></span> กำลังอ่านข้อมูล...
+                            {:else if isSaving}
+                                <span class="loading loading-spinner loading-sm"></span> กำลังบันทึก...
+                            {:else}
+                                <FileCheckCorner class="h-5 w-5" /> บันทึกข้อมูล
+                            {/if}
+                        </button>
+                    </div>
+                </form>
+            </section>
+        {/if}
     {/if}
 </main>

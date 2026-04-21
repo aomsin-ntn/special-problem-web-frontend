@@ -128,7 +128,7 @@
             <p class="text-orange-100 mt-1">ภาพรวมข้อมูลคำผิดและการจัดการพจนานุกรมในระบบ</p>
         </div>
 
-        <div class="bg-gray-100 border-b border-gray-600 px-6 pt-4 flex gap-2 overflow-x-auto">
+        <div class="bg-gray-100 px-6 pt-4 flex gap-2 overflow-x-auto">
             {#each tabs as tab}
                 <button 
                     onclick={() => activeTab = tab.id}

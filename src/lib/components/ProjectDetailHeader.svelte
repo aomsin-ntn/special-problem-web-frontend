@@ -1,6 +1,7 @@
 <script lang="ts">
     import { Download, Loader2 } from 'lucide-svelte';
     import { PUBLIC_API_URL } from '$env/static/public';
+    import Swal from 'sweetalert2';
 
     interface Project {
         id: string;
@@ -51,7 +52,7 @@
             document.body.removeChild(a);
         } catch (error) {
             console.error('Download Error:', error);
-            alert('เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์ โปรดลองอีกครั้ง');
+            Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการดาวน์โหลดไฟล์', 'error');
         } finally {
             isDownloading = false;
         }

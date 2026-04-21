@@ -1,5 +1,6 @@
 <script lang="ts">
     import { Upload, Loader2 } from 'lucide-svelte';
+    import Swal from 'sweetalert2';
 
     interface FileDetails {
         name: string;
@@ -22,7 +23,7 @@
         if (file?.type === 'application/pdf') {
             onFileSelected(file);
         } else {
-            alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
+            Swal.fire('ข้อผิดพลาด', 'กรุณาอัปโหลดไฟล์ PDF เท่านั้น', 'error');
         }
     };
 
