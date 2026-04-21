@@ -72,7 +72,7 @@
 							departmentName: item.department?.department_name_th ?? "-",
 							authors: item.users?.map((u: any) => u.user_name_th) ?? [],
 							advisors: item.advisors?.map((a: any) => a.advisor_name_th) ?? [],
-							academicYear: item.project?.academic_year ?? '-',
+							academicYear: item.project?.academic_year_be ?? '-',
 							keywords: item.keywords?.map((k: any) => k.keyword_text_th) ?? [],
 							thumbnail: item.project_file?.thumbnail_path ?? null,
 							downloadCount: item.project?.downloaded_count ?? 0

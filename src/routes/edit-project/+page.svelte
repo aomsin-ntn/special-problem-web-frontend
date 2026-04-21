@@ -165,7 +165,8 @@
                 title_en: project.title_en,
                 abstract_th: project.abstract_th,
                 abstract_en: project.abstract_en,
-                academic_year: project.academic_year,
+                academic_year_be: project.academic_year_be,
+                academic_year_ce: project.academic_year_ce,
                 
                 degree: { 
                     degree_id: project.degree?.degree_id || null,
@@ -342,8 +343,12 @@
                                     <input id="title_en" type="text" bind:value={project.title_en} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
                                 </div>
                                 <div class="form-control w-1/3">
-                                    <label for="academic_year" class="label"><span class="label-text font-bold">ปีการศึกษา</span></label>
-                                    <input id="academic_year" type="text" bind:value={project.academic_year} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
+                                    <label for="academic_year_be" class="label"><span class="label-text font-bold">ปีการศึกษา (TH)</span></label>
+                                    <input id="academic_year_be" type="text" bind:value={project.academic_year_be} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
+                                </div>
+                                <div class="form-control w-1/3">
+                                    <label for="academic_year_ce" class="label"><span class="label-text font-bold">ปีการศึกษา (EN)</span></label>
+                                    <input id="academic_year_ce" type="text" bind:value={project.academic_year_ce} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
                                 </div>
                             </div>
                         </section>

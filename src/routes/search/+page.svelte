@@ -24,7 +24,7 @@
     interface ProjectItem {
         project: {
             project_id: string;
-            academic_year: string;
+            academic_year_be: string;
             title_th: string;
             title_en: string;
             downloaded_count: number;
@@ -274,7 +274,7 @@
                                     department={item.department?.department_name_th || "-"}
                                     author={item.users?.map((u: any) => u.user_name_th)}
                                     advisor={item.advisors?.map((a: any) => a.advisor_name_th)}
-                                    semester={item.project.academic_year}
+                                    semester={item.project.academic_year_be}
                                     titleThai={item.project.title_th}
                                     titleEnglish={item.project.title_en}
                                     keywords={item.keywords?.map((k: any) => k.keyword_text_th)}

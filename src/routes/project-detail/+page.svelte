@@ -90,7 +90,7 @@
                     faculty: data.faculty?.faculty_name_th ?? '-',
                     department: data.department?.department_name_th ?? '-',
                     degree: data.degree?.degree_name_th ?? '-',
-                    year: data.academic_year ?? data.project?.academic_year ?? '-',
+                    year: data.academic_year_be ?? data.project?.academic_year_be ?? '-',
                     
                     authorTH: (data.users ?? data.authors)?.map((a: any) => a.user_name_th) ?? [],
                     authorEN: (data.users ?? data.authors)?.map((a: any) => a.user_name_en) ?? [],

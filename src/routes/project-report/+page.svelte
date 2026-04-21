@@ -294,7 +294,7 @@
                                     <div class="font-semibold text-gray-700 line-clamp-2">{item.project.title_th}</div>
                                     <div class="text-xs text-gray-700 mt-1 line-clamp-1">{item.department?.department_name_th}</div>
                                 </td>
-                                <td class="py-4 text-gray-700">{item.project.academic_year}</td>
+                                <td class="py-4 text-gray-700">{item.project.academic_year_be}</td>
                                 <td class="py-4 text-gray-700 text-xs">{formatDate(item.project.created_at)}</td>
                                 <td class="py-4 text-center">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
