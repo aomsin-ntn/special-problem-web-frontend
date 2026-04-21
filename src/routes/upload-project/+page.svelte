@@ -1,465 +1,615 @@
 <svelte:head>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </svelte:head>
 
 <script lang="ts">
-    import { Upload, FileCheckCorner, SquarePen, Loader2 } from 'lucide-svelte';
+    import { Upload, FileCheckCorner, SquarePen, Plus, Trash2 } from 'lucide-svelte';
     import { goto } from '$app/navigation';
-    import Abstract_th_page from '$lib/assets/Abstract_th_page.jpg';
-    import Abstract_en_page from '$lib/assets/Abstract_en_page.jpg';
-    import OcrForm from '$lib/components/OcrForm.svelte';
     import { PUBLIC_API_URL } from '$env/static/public';
+    import { authStore } from '$lib/stores/authStore';
+    import type { ProjectData, FileInfo, PageThumbnail, SpellErrorMap } from '$lib/types';
+    import StepIndicator  from '$lib/components/StepIndicator.svelte';
+    import FileUploadZone from '$lib/components/FileUploadZone.svelte';
+    import PageSelector   from '$lib/components/PageSelector.svelte';
+    import OcrForm        from '$lib/components/OcrForm.svelte';
+    import SpellCheckTextarea from '$lib/components/SpellCheckTextarea.svelte';
+    import Swal from 'sweetalert2';
 
-    // โครงสร้างข้อมูลชื่อบุคคล (ผู้จัดทำ/อาจารย์ที่ปรึกษา)
-    interface AuthorAdvisor {
-        name: string;
-    }
+    let isAccessDenied = $derived($authStore.user && $authStore.user.role !== 'student');
 
-    // โครงสร้างข้อมูลโปรเจกต์ที่ใช้แสดงและแก้ไขผล OCR
-    interface ProjectData {
-        title: string;
-        faculty: string;
-        department: string;
-        degree: string;
-        academicYear: string;
-        authors: AuthorAdvisor[];
-        advisors: AuthorAdvisor[];
-        abstract: string;
-        keywords: string[];
-    }
-
+    // ─── Step state ───────────────────────────────────────────────────────────
     let currentStep = $state(1);
+
     const stepItems = [
-        { name: 'อัปโหลดไฟล์', icon : Upload },
-        { name: 'เลือกหน้า', icon: FileCheckCorner },
-        { name: 'ตรวจสอบและแก้ไข', icon: SquarePen }
+        { name: 'อัปโหลดไฟล์',       icon: Upload },
+        { name: 'เลือกหน้า',          icon: FileCheckCorner },
+        { name: 'ตรวจสอบและแก้ไข',   icon: SquarePen },
     ];
 
-    let uploadedFile = $state<File | null>(null);
-    let fileDetails = $state({ name: '', pages: 0 });
-    let pageThumbnails = $state<{ id: number; src: string }[]>([]);
-	let isGeneratingThumbnails = $state(false);
-    
-    let isDragging = $state(false);
+    // ─── Step 1: File upload ──────────────────────────────────────────────────
+    let uploadedFile          = $state<File | null>(null);
+    let fileDetails           = $state({ name: '', pages: 0 });
+    let pageThumbnails        = $state<PageThumbnail[]>([]);
+    let isGeneratingThumbnails = $state(false);
 
-    // อ่านไฟล์ PDF และสร้างภาพตัวอย่างทุกหน้า
     const processPdfForThumbnails = async (file: File) => {
-		isGeneratingThumbnails = true;
-		pageThumbnails = [];
+        isGeneratingThumbnails = true;
+        pageThumbnails = [];
 
-		try {
-			const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
-			pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        try {
+            const pdfjsLib = (window as any)['pdfjs-dist/build/pdf'];
+            pdfjsLib.GlobalWorkerOptions.workerSrc =
+                'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-			const arrayBuffer = await file.arrayBuffer();
-			const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-			const totalPages = pdf.numPages;
-			fileDetails = { name: file.name, pages: totalPages };
+            fileDetails = { name: file.name, pages: pdf.numPages };
 
-			let tempThumbnails = [];
-			for (let i = 1; i <= totalPages; i++) {
-				const page = await pdf.getPage(i);
-				const viewport = page.getViewport({ scale: 0.4 }); 
+            const tempThumbnails: PageThumbnail[] = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page     = await pdf.getPage(i);
+                const viewport = page.getViewport({ scale: 0.4 });
+                const canvas   = document.createElement('canvas');
+                const context  = canvas.getContext('2d');
+                if (!context) throw new Error('Canvas not supported');
 
-				const canvas = document.createElement('canvas');
-				const context = canvas.getContext('2d');
-				if (!context) throw new Error('Canvas not supported');
+                canvas.height = viewport.height;
+                canvas.width  = viewport.width;
+                await page.render({ canvasContext: context, viewport }).promise;
+                tempThumbnails.push({ id: i, src: canvas.toDataURL('image/jpeg', 0.8) });
+            }
 
-				canvas.height = viewport.height;
-				canvas.width = viewport.width;
+            pageThumbnails = tempThumbnails;
+        } catch (error) {
+            console.error('PDF Error:', error);
+            Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการอ่านไฟล์ PDF', 'error');
+            uploadedFile = null;
+        } finally {
+            isGeneratingThumbnails = false;
+        }
+    };
 
-				await page.render({ canvasContext: context, viewport: viewport }).promise;
-				tempThumbnails.push({
-					id: i,
-					src: canvas.toDataURL('image/jpeg', 0.8)
-				});
-			}
+    const handleFileSelected = (file: File) => {
+        uploadedFile = file;
+        processPdfForThumbnails(file);
+    };
 
-			pageThumbnails = tempThumbnails;
-		} catch (error) {
-			console.error('PDF Error:', error);
-			alert('เกิดข้อผิดพลาดในการอ่านไฟล์ PDF');
-			uploadedFile = null;
-		} finally {
-			isGeneratingThumbnails = false;
-		}
-	};
-
-    // รองรับการอัปโหลดแบบลากไฟล์มาวาง
-    const handleFileDrop = (event: DragEvent) => {
-		event.preventDefault();
-        isDragging = false; 
-		const file = event.dataTransfer?.files[0];
-		if (file && file.type === 'application/pdf') {
-			uploadedFile = file;
-			processPdfForThumbnails(file);
-		} else {
-			alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
-		}
-	};
-
-    // รองรับการอัปโหลดผ่าน input file
-    const handleFileSelect = (event: Event) => {
-		const file = (event.target as HTMLInputElement).files?.[0];
-		if (file && file.type === 'application/pdf') {
-			uploadedFile = file;
-			processPdfForThumbnails(file);
-		} else {
-			alert('กรุณาอัปโหลดไฟล์ PDF เท่านั้น');
-		}
-	};
-
+    // ─── Step 2: Page selection ───────────────────────────────────────────────
     let selectedPages = $state<number[]>([]);
-    // เลือกได้สูงสุด 2 หน้า (ไทย/อังกฤษ)
-	const togglePageSelection = (pageNumber: number) => {
-		if (selectedPages.includes(pageNumber)) {
-			selectedPages = selectedPages.filter((p) => p !== pageNumber);
-		} else if (selectedPages.length < 2) {
-			selectedPages = [...selectedPages, pageNumber];
-		} else {
-			alert('คุณสามารถเลือกได้สูงสุด 2 หน้า เท่านั้น');
-		}
-	};
 
-	let isLoadingOcr = $state(false);
-    let ocrDataThai = $state<ProjectData>({
-        title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
+    const togglePageSelection = (pageId: number) => {
+        if (selectedPages.includes(pageId)) {
+            selectedPages = selectedPages.filter((p) => p !== pageId);
+        } else if (selectedPages.length < 4) {
+            selectedPages = [...selectedPages, pageId];
+        } else {
+            Swal.fire('ข้อผิดพลาด', 'คุณสามารถเลือกได้สูงสุด 4 หน้า เท่านั้น', 'error');
+        }
+    };
+
+    // ─── Step 3: OCR & review ────────────────────────────────────────────────
+    let isLoadingOcr = $state(false);
+    let isSaving     = $state(false);
+    let fileInfo     = $state<FileInfo | null>(null);
+    let degreeId     = $state<string | null>(null);
+    let advisorId    = $state<string | null>(null);
+
+    let masterFaculties = $state<any[]>([]);
+    let masterDegrees = $state<any[]>([]);
+    let masterAdvisors = $state<any[]>([]);
+
+    let selectedDegreeId = $state<string>('');
+    let selectedFacultyId = $state<string>('');
+    let selectedDepartmentId = $state<string>('');
+    let selectedAdvisors = $state<{advisor_id: string}[]>([{ advisor_id: '' }]);
+
+    let originalOcrPayload = $state<any>(null);
+
+    const addAdvisor = () => selectedAdvisors.push({ advisor_id: '' });
+    const removeAdvisor = (index: number) => selectedAdvisors.splice(index, 1);
+
+    let uniqueDegrees = $derived((() => {
+        if (!masterDegrees) return [];
+        const unique = [];
+        const map = new Map();
+        for (const item of masterDegrees) {
+            if (!map.has(item.degree_id)) {
+                map.set(item.degree_id, true);
+                unique.push(item);
+            }
+        }
+        return unique;
+    })());
+
+    let availableFaculties = $derived((() => {
+        if (!masterFaculties || masterFaculties.length === 0) return [];
+        if (!selectedDegreeId) return masterFaculties;
+        
+        const linkedDeptIds = masterDegrees
+            .filter(d => d.degree_id === selectedDegreeId)
+            .map(d => d.department_id);
+            
+        if (linkedDeptIds.length === 0) return masterFaculties;
+
+        return masterFaculties.filter(item => 
+            item.departments && item.departments.some((dept: any) => linkedDeptIds.includes(dept.department_id))
+        );
+    })());
+    
+    let availableDepartments = $derived((() => {
+        if (!masterFaculties || !selectedFacultyId) return [];
+        const selectedFaculty = masterFaculties.find(f => f?.faculty?.faculty_id === selectedFacultyId);
+        if (!selectedFaculty || !selectedFaculty.departments) return [];
+
+        if (selectedDegreeId) {
+            const linkedDeptIds = masterDegrees
+                .filter(d => d.degree_id === selectedDegreeId)
+                .map(d => d.department_id);
+            if (linkedDeptIds.length > 0) {
+                return selectedFaculty.departments.filter((dept: any) => 
+                    linkedDeptIds.includes(dept.department_id)
+                );
+            }
+        }
+        return selectedFaculty.departments;
+    })());
+
+    const handleDegreeChange = () => { selectedFacultyId = ''; selectedDepartmentId = ''; };
+    const handleFacultyChange = () => { selectedDepartmentId = ''; };
+
+    const emptyProjectData = (): ProjectData => ({
+        title: '', faculty: '', department: '', degree: '',
+        academicYear: '', authors: [], advisors: [], abstract: '', keywords: [],
     });
-    let ocrDataEnglish = $state<ProjectData>({
-        title: '', faculty: '', department: '', degree: '', academicYear: '', authors: [], advisors: [], abstract: '', keywords: []
-    });
 
-    let currentProjectID = $state<string>('');
+    let ocrDataThai    = $state<ProjectData>(emptyProjectData());
+    let ocrDataEnglish = $state<ProjectData>(emptyProjectData());
 
-    // ส่งไฟล์และเลขหน้าที่เลือกไป OCR แล้ว map ผลลัพธ์เข้าฟอร์ม
+    let spellErrors = $state<SpellErrorMap>({});
+
+    let pairedKeywords = $state<{th: string, en: string}[]>([]);
+
+    const addKeyword = () => pairedKeywords.push({ th: '', en: '' });
+    const removeKeyword = (index: number) => pairedKeywords.splice(index, 1);
+
     const extractOcrData = async () => {
         isLoadingOcr = true;
         try {
             const sortedPages = [...selectedPages].sort((a, b) => a - b);
             const queryParams = new URLSearchParams();
             sortedPages.forEach((page) => queryParams.append('pages', page.toString()));
-            const url = `${PUBLIC_API_URL}/project/upload?${queryParams.toString()}`;
 
             const formData = new FormData();
             formData.append('file', uploadedFile as File);
 
-            const response = await fetch(url, {
-                method: 'POST',
-                body: formData
-            });
+            const [ocrRes, facRes, degRes, advRes] = await Promise.all([
+                fetch(`${PUBLIC_API_URL}/project/upload?${queryParams}`, { method: 'POST', body: formData, credentials: 'include' }),
+                fetch(`${PUBLIC_API_URL}/project/get_faculty`),
+                fetch(`${PUBLIC_API_URL}/master/degree`),
+                fetch(`${PUBLIC_API_URL}/master/advisor`)
+            ]);
+            if (!ocrRes.ok) throw new Error('Server error: ' + ocrRes.status);
 
-            if (!response.ok) throw new Error('Server responded failed with status ' + response.status);
+            const data  = await ocrRes.json();
+            masterFaculties = await facRes.json();
+            masterDegrees = await degRes.json();
+            masterAdvisors = await advRes.json();
 
-            const data = await response.json();
+            const newSpellErrors: SpellErrorMap = {};
+            if (Array.isArray(data.spell_errors)) {
+                data.spell_errors.forEach((err: any) => {
+                    newSpellErrors[err.field] = err.stats?.wrong_words || [];
+                });
+            }
+            spellErrors = newSpellErrors;
 
-            currentProjectID = data.saved_as;
-            const th = data['fields-th'] || {};
+            fileInfo    = data.file_info   ?? null;
+            const form  = data.form_data   ?? {};
+            degreeId    = form.degree?.degree_id   ?? null;
+            advisorId   = form.advisor?.advisor_id ?? null;
+
+            pairedKeywords = (form.keywords || []).map((kw: any) => ({
+                th: kw.keyword_text_th || '',
+                en: kw.keyword_text_en || ''
+            }));
+
+            selectedDegreeId = form.degree?.degree_id || '';
+            selectedFacultyId = form.faculty?.faculty_id || '';
+            selectedDepartmentId = form.department?.department_id || '';
+            
+            if (form.advisors && form.advisors.length > 0) {
+                selectedAdvisors = form.advisors.map((a: any) => ({ advisor_id: a.advisor_id || '' }));
+            } else {
+                selectedAdvisors = [{ advisor_id: '' }];
+            }
+
             ocrDataThai = {
-                title: th.Title || '',
-                faculty: th.Faculty || '',
-                department: th.Department || '',
-                degree: th.Degree || '',
-                academicYear: th.AcademicYear || '',
-                authors: th.Name ? [{ name: th.Name }] : [], 
-                advisors: th.Advisor ? [{ name: th.Advisor }] : [],
-                abstract: th.Abstract || '',
-                keywords: th.Keywords ? th.Keywords.replace(/^:\s*/, '').split(',').map((k: string) => k.trim()).filter(Boolean) : []
+                title:        form.title_th                  ?? '',
+                faculty:      form.faculty?.faculty_name_th  ?? '',
+                department:   form.department?.department_name_th ?? '',
+                degree:       form.degree?.degree_name_th    ?? '',
+                academicYear: form.academic_year             ?? '',
+                authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_th    ?? '', studentId: s.student_id ?? '' })),
+                advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_th ?? '' })),
+                abstract: form.abstract_th ?? '',
+                keywords: (form.keywords ?? []).map((k: any) => k.th ?? ''),
             };
 
-            const en = data['fields-en'] || {};
             ocrDataEnglish = {
-                title: en.Title || '',
-                faculty: en.Faculty || '',
-                department: en.Department || '',
-                degree: en.Degree || '',
-                academicYear: en.AcademicYear || '',
-                authors: en.Name ? [{ name: en.Name }] : [],
-                advisors: en.Advisor ? [{ name: en.Advisor }] : [],
-                abstract: en.Abstract || '',
-                keywords: en.Keywords ? en.Keywords.replace(/^:\s*/, '').split(',').map((k: string) => k.trim()).filter(Boolean) : []
+                title:        form.title_en                  ?? '',
+                faculty:      form.faculty?.faculty_name_en  ?? '',
+                department:   form.department?.department_name_en ?? '',
+                degree:       form.degree?.degree_name_en    ?? '',
+                academicYear: form.academic_year             ?? '',
+                authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_en    ?? '', studentId: s.student_id ?? '' })),
+                advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_en ?? '' })),
+                abstract: form.abstract_en ?? '',
+                keywords: (form.keywords ?? []).map((k: any) => k.en ?? ''),
             };
+
+            const currentPayload = buildPayload();
+            originalOcrPayload = JSON.parse(JSON.stringify(currentPayload));
+
         } catch (error) {
             console.error('OCR Error:', error);
-            alert('OCR processing failed');
-            currentStep = 2; 
+            Swal.fire('ข้อผิดพลาด', 'OCR processing failed', 'error');
+            currentStep = 2;
         } finally {
             isLoadingOcr = false;
         }
-    }
-    
-    // ไปขั้นตอนถัดไป และเริ่ม OCR เมื่อเข้าสู่ขั้นตอนที่ 3
+    };
+
+    // ─── Navigation ──────────────────────────────────────────────────────────
     const nextStep = () => {
         if (currentStep < 3) currentStep++;
         if (currentStep === 3) extractOcrData();
     };
 
-    // ย้อนกลับไปขั้นตอนก่อนหน้า
     const prevStep = () => {
         if (currentStep > 1) currentStep--;
     };
 
-    // บันทึกข้อมูลที่แก้ไขแล้วไปยังเซิร์ฟเวอร์
+    // ─── Submit ───────────────────────────────────────────────────────────────
+    const buildPayload = () => {
+        const mergeList = <T extends { name: string; studentId?: string }>(
+            thList: T[],
+            enList: T[],
+            mapFn: (th: T, en: T, i: number) => object,
+        ) => Array.from({ length: Math.max(thList.length, enList.length) }, (_, i) =>
+            mapFn(thList[i] ?? ({ name: '', studentId: '' } as T), enList[i] ?? ({ name: '' } as T), i));
+
+        const degObj = masterDegrees.find((d: any) => d.degree_id === selectedDegreeId) || {};
+        const facObj = availableFaculties.find((f: any) => f.faculty?.faculty_id === selectedFacultyId)?.faculty || {};
+        const deptObj = availableDepartments.find((d: any) => d.department_id === selectedDepartmentId) || {};
+
+        const projectData = {
+            title_th:      ocrDataThai.title,
+            title_en:      ocrDataEnglish.title,
+            abstract_th:   ocrDataThai.abstract,
+            abstract_en:   ocrDataEnglish.abstract,
+            academic_year: ocrDataThai.academicYear,
+            degree: {
+                degree_id: selectedDegreeId || null,
+                degree_name_th: degObj.degree_name_th || '',
+                degree_name_en: degObj.degree_name_en || '',
+            },
+            department: {
+                department_id: selectedDepartmentId || null,
+                department_name_th: deptObj.department_name_th || '',
+                department_name_en: deptObj.department_name_en || '',
+            },
+            faculty: {
+                faculty_id: selectedFacultyId || null,
+                faculty_name_th: facObj.faculty_name_th || '',
+                faculty_name_en: facObj.faculty_name_en || '',
+            },
+            students: mergeList(ocrDataThai.authors, ocrDataEnglish.authors, (th, en) => ({
+                student_id:      th.studentId || en.studentId || '',
+                student_name_th: th.name,
+                student_name_en: en.name,
+            })),
+            advisors: selectedAdvisors.map(adv => {
+                const advObj = masterAdvisors.find(a => a.advisor_id === adv.advisor_id) || {};
+                return {
+                    advisor_id: adv.advisor_id || null,
+                    advisor_name_th: advObj.advisor_name_th || '',
+                    advisor_name_en: advObj.advisor_name_en || ''
+                };
+            }),
+            keywords: pairedKeywords.map(kw => ({
+                keyword_text_th: kw.th,
+                keyword_text_en: kw.en
+            })),
+            file_info: fileInfo,
+        };
+
+        return {
+            data: projectData,
+            old_data: originalOcrPayload ? originalOcrPayload.data : null 
+        };
+    };
+
     const handleSubmit = async (event: SubmitEvent) => {
         event.preventDefault();
-        isLoadingOcr = true;
+        if (!fileInfo) { 
+            Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลไฟล์อ้างอิง', 'error'); 
+            return; 
+        }
+        isSaving = true;
         try {
-            if (!currentProjectID) throw new Error('ไม่พบรหัสโปรเจกต์อ้างอิง');
-            const projectPayload = {
-                thai: ocrDataThai,
-                english: ocrDataEnglish
-            };
-
-            const response = await fetch(`${PUBLIC_API_URL}/project/edit`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(projectPayload)
+            const response = await fetch(`${PUBLIC_API_URL}/project/save`, {
+                method:      'POST',
+                headers:     { 'Content-Type': 'application/json' },
+                body:        JSON.stringify(buildPayload()),
+                credentials: 'include',
             });
+            if (!response.ok) throw new Error('Failed to save: ' + response.status);
 
-            if (!response.ok) throw new Error('Failed to save project data: ' + response.status);
+            Swal.fire({
+                    title: 'บันทึกสำเร็จ!',
+                    text: 'บันทึกข้อมูลโปรเจกต์สำเร็จ',
+                    icon: 'success',
+                    confirmButtonColor: '#f97316'
+                });
 
-            alert('บันทึกข้อมูลโปรเจกต์สำเร็จ');
-            currentStep = 1;
-            uploadedFile = null;
+            currentStep   = 1;
+            uploadedFile  = null;
             selectedPages = [];
-            currentProjectID = '';
-
+            fileInfo      = null;
             await goto('/profile');
-
         } catch (error) {
             console.error('Save Error:', error);
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์');
+            Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
         } finally {
-            isLoadingOcr = false;
+            isSaving = false;
         }
     };
 </script>
 
 <main class="min-h-screen bg-white px-4 md:px-8 py-10 md:py-16 text-black">
-    <!-- ส่วนหัวของหน้าสำหรับอัปโหลดปัญหาพิเศษ -->
-    <header class="text-center mb-8 md:mb-12">
-        <h1 class="text-2xl md:text-3xl font-bold text-black">อัปโหลดปัญหาพิเศษ</h1>
-    </header>
 
-    <!-- แถบแสดงสถานะของขั้นตอนการทำงาน -->
-    <div class="flex justify-center mb-10 overflow-x-auto hide-scrollbar">
-        <ul class="steps w-full max-w-3xl justify-center items-center text-xs md:text-sm font-medium">
-            {#each stepItems as { name, icon }, index (index)}
-                {@const IconComponent = icon}
-                <li class="step {currentStep > index ? 'step-primary' : ''}">
-                    <span class="step-icon flex h-8 w-8 md:h-10 md:w-10 items-center justify-center rounded-full transition-all duration-300 shadow-sm
-                        {currentStep > index ? 'border-orange-500 bg-orange-500 text-white' : 'border-gray-400 bg-gray-400 text-white'} my-2 md:my-3">
-                        <IconComponent class="h-4 w-4 md:h-5 md:w-5" />
-                    </span>
-                    <span class="mt-1 md:mt-2 text-[10px] md:text-base px-1">{name}</span>
-                </li>
-            {/each}
-        </ul>
-    </div>
-        
-    {#if currentStep === 1}
-        <!-- ขั้นตอนที่ 1: อัปโหลดไฟล์ PDF -->
-        <section class="max-w-4xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-            <div class="bg-white border border-gray-500 shadow-lg rounded-2xl p-6 md:p-10">
-                <h2 class="text-lg md:text-xl font-bold text-black text-center mb-8">ขั้นตอนที่ 1 : อัปโหลดไฟล์ PDF</h2>
-                
-                <div class="rounded-xl overflow-hidden">
-                    <div 
-                        class="drop-zone h-64 md:h-72 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center cursor-pointer gap-3 transition-all duration-300 
-                            {isDragging ? 'bg-orange-100 border-orange-500 scale-[1.02]' : 'bg-gray-50 hover:bg-orange-50 border-gray-300 hover:border-orange-400'}"
-                        ondragover={(e) => { e.preventDefault(); isDragging = true; }}
-                        ondragleave={() => isDragging = false}
-                        ondrop={handleFileDrop}
-                        onclick={() => document.getElementById('pdfFileInput')?.click()}
-                        role="button"
-                        tabindex="0"
-                        onkeydown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                document.getElementById('pdfFileInput')?.click();
-                            }
-                        }}
-                    >
-                        <Upload class="h-16 w-16 md:h-20 md:w-20 text-orange-500 opacity-60 mb-2 transition-transform {isDragging ? 'scale-110' : ''}" />
-                        <p class="font-bold text-gray-700 text-base md:text-lg">คลิกที่นี่เพื่ออัปโหลด</p>
-                        <p class="text-sm text-gray-400">หรือลากไฟล์ PDF มาวางที่นี่</p>
-                        <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange={handleFileSelect}>
-                    </div>
-                </div>
-
-                {#if fileDetails.name}
-                    <div class="mt-8 bg-orange-50 border border-orange-200 rounded-xl p-6 flex flex-col gap-2 items-center text-center shadow-inner">
-                        <p class="text-base md:text-lg text-orange-800 font-bold">อัปโหลดไฟล์เรียบร้อย</p>
-                        <p class="text-gray-700 text-sm md:text-base break-all">ไฟล์: <span class="text-orange-600 font-semibold">{fileDetails.name}</span></p>
-                        <p class="text-gray-700 text-sm md:text-base">จำนวน: <span class="text-orange-600 font-semibold">{fileDetails.pages}</span> หน้า</p>
-                    </div>
-                {/if}
+    {#if isAccessDenied}
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-2xl md:text-3xl font-bold text-black">อัปโหลดปัญหาพิเศษ</h1>
+        </header>
+        <div class="max-w-3xl mx-auto bg-white p-10 rounded-xl shadow-md border border-red-200 text-center">
+            <div class="text-red-500 mb-4">
+                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
             </div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2">คุณไม่มีสิทธิ์เข้าถึงหน้านี้</h1>
+            <p class="text-gray-600 mb-6">เฉพาะนักศึกษาเท่านั้นที่สามารถอัปโหลดปัญหาพิเศษได้</p>
+            <button 
+                onclick={() => goto('/')}
+                class="btn btn-primary"
+            >
+                กลับสู่หน้าหลัก
+            </button>
+        </div>
+    {:else}
+        <!-- Page header -->
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-2xl md:text-3xl font-bold text-black">อัปโหลดปัญหาพิเศษ</h1>
+        </header>
 
-            <div class="flex justify-center mt-8">
-				<button
-					class="w-full md:w-2/3 lg:w-1/2 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-all duration-300 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-					onclick={nextStep}
-					disabled={!uploadedFile || isGeneratingThumbnails}
-				>
-					{#if isGeneratingThumbnails}
-						<Loader2 class="h-5 w-5 animate-spin" /> <span>กำลังสร้างภาพตัวอย่าง...</span>
-					{:else}
-						ถัดไป
-					{/if}
-				</button>
-			</div>
-        </section>
-    {/if}
+        <!-- Step progress bar -->
+        <StepIndicator {currentStep} {stepItems} />
 
-    {#if currentStep === 2}
-        <!-- ขั้นตอนที่ 2: เลือกหน้าบทคัดย่อภาษาไทยและภาษาอังกฤษ -->
-        <section class="max-w-5xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-            <div class="bg-white border border-gray-500 shadow-lg rounded-2xl p-6 md:p-10">
-                <h2 class="text-lg md:text-xl font-bold text-black text-center mb-8">ขั้นตอนที่ 2 : เลือกหน้าบทคัดย่อเพื่อทำการประมวลผล</h2>
-                
-                <div class="p-4 md:p-8 border border-orange-200 rounded-xl mb-10 bg-orange-50/50 shadow-inner">
-                    <h3 class="text-base md:text-lg font-bold text-center text-black mb-6">ตัวอย่างหน้าที่ต้องเลือก</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 px-4 md:px-10">
-                        <div class="flex flex-col items-center gap-3">
-                            <p class="text-sm md:text-base font-semibold text-gray-800 bg-white px-4 py-1.5 rounded-full shadow-sm border border-gray-100">หน้าบทคัดย่อภาษาไทย</p>
-                            <img src={Abstract_th_page} alt="Thai Abstract" class="aspect-3/4 w-full max-w-60 border-4 border-white shadow-md rounded-lg object-cover">
-                        </div>
-                        <div class="flex flex-col items-center gap-3">
-                            <p class="text-sm md:text-base font-semibold text-gray-800 bg-white px-4 py-1.5 rounded-full shadow-sm border border-gray-100">หน้าบทคัดย่อภาษาอังกฤษ</p>
-                            <img src={Abstract_en_page} alt="English Abstract" class="aspect-3/4 w-full max-w-60 border-4 border-white shadow-md rounded-lg object-cover">
-                        </div>
-                    </div>
-                    
-                    <div class="mt-8 bg-white p-4 rounded-lg border border-orange-100 shadow-sm">
-                        <p class="font-bold text-gray-800 mb-2 text-sm md:text-base">เงื่อนไขในการเลือกหน้า:</p>
-                        <ul class="list-disc list-inside flex flex-col gap-1.5 text-sm text-gray-700">
-                            <li>หน้าที่เลือกต้องมีโครงสร้างข้อมูลตรงกับหน้าตัวอย่าง</li>
-                            <li>ต้องเลือก <strong>ทั้งหน้าภาษาไทย และหน้าภาษาอังกฤษ</strong> รวมเป็น 2 หน้า</li>
-                        </ul>
+        <!-- ── Step 1: Upload ─────────────────────────────────────────────────── -->
+        {#if currentStep === 1}
+            <FileUploadZone
+                {fileDetails}
+                {isGeneratingThumbnails}
+                isNextDisabled={!uploadedFile || isGeneratingThumbnails}
+                onFileSelected={handleFileSelected}
+                onNext={nextStep}
+            />
+        {/if}
+
+        <!-- ── Step 2: Page selection ─────────────────────────────────────────── -->
+        {#if currentStep === 2}
+            <PageSelector
+                {pageThumbnails}
+                {selectedPages}
+                onTogglePage={togglePageSelection}
+                onPrev={prevStep}
+                onNext={nextStep}
+            />
+        {/if}
+
+        <!-- ── Step 3: OCR review & submit ───────────────────────────────────── -->
+        {#if currentStep === 3}
+
+            <!-- Saving overlay -->
+            {#if isSaving}
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm transition-all duration-300">
+                    <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95">
+                        <span class="loading loading-spinner loading-lg text-orange-500"></span>
+                        <p class="text-xl font-bold text-gray-800 animate-pulse">กำลังบันทึกข้อมูล...</p>
+                        <p class="text-sm text-gray-500">กรุณารอสักครู่ ห้ามปิดหรือรีเฟรชหน้าต่างนี้</p>
                     </div>
                 </div>
+            {/if}
 
-                <div class="text-center mb-6">
-                    <p class="text-base md:text-lg font-bold text-gray-800">คลิกเลือกหน้าจากไฟล์ของคุณ (เลือก 2 หน้า)</p>
-                </div>
-                
-                <div class="border border-gray-200 rounded-xl bg-gray-50/50 p-4 md:p-8 h-125 overflow-y-auto shadow-inner">        
-                    <div class="flex flex-wrap justify-center gap-4 md:gap-8">
-                        {#each pageThumbnails as { id, src }, index (index)}
-                            <button
-                                class="group relative flex flex-col items-center gap-3 w-28 md:w-36 transition-all duration-200 bg-transparent border-none cursor-pointer {selectedPages.includes(id) ? 'scale-105' : 'hover:scale-105 hover:-translate-y-1'}"
-                                onclick={() => togglePageSelection(id)}
-                            >
-                                <div class="relative w-full aspect-[1/1.414] bg-white shadow-sm transition-all duration-200 flex items-center justify-center overflow-hidden rounded-md
-                                    {selectedPages.includes(id) ? 'ring-4 ring-orange-500 ring-offset-2 shadow-lg' : 'border border-gray-200 group-hover:border-orange-300 group-hover:shadow-md'}">
-                                    
-                                    <img {src} alt="Page {id}" class="w-full h-full object-cover" />
-                                    
-                                    {#if selectedPages.includes(id)}
-                                        <div class="absolute inset-0 bg-orange-500/20 mix-blend-multiply"></div>
-                                    {/if}
+            <section class="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
+                <form onsubmit={handleSubmit}>
+                    <div class="bg-white border border-gray-500 shadow-sm rounded-2xl p-6 md:p-10">
+                        <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-black text-center mb-10">
+                            ขั้นตอนที่ 3 : ตรวจสอบและแก้ไขข้อมูล OCR
+                        </h2>
+
+                        {#if isLoadingOcr}
+                            <!-- Skeleton loader -->
+                            <div class="flex flex-col items-center gap-4 mb-8">
+                                <span class="loading loading-spinner loading-lg text-orange-500"></span>
+                                <p class="text-orange-600 font-bold animate-pulse">ระบบกำลังอ่านและสกัดข้อมูลจาก PDF...</p>
+                            </div>
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {#each Array(2) as _}
+                                    <div class="border border-gray-200 rounded-xl p-6 bg-gray-50 animate-pulse">
+                                        <div class="h-6 w-48 bg-gray-300 rounded mb-8"></div>
+                                        <div class="space-y-6">
+                                            <div class="h-14 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                                <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                            </div>
+                                            <div class="h-32 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                            <div class="h-16 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                        </div>
+                                    </div>
+                                {/each}
+                            </div>
+                        {:else}
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+                                <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
+                                    <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
+                                        3.1 ข้อมูลภาษาไทย
+                                    </h3>
+                                    <OcrForm bind:data={ocrDataThai} lang="th" {spellErrors} />
+                                </div>
+                                <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
+                                    <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
+                                        3.2 ข้อมูลภาษาอังกฤษ
+                                    </h3>
+                                    <OcrForm bind:data={ocrDataEnglish} lang="en" {spellErrors} />
+                                </div>
+                            </div>
+
+                            <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
+                                <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">
+                                    3.3 ข้อมูลอ้างอิง (Master Data)
+                                </h3>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="form-control md:col-span-2">
+                                        <label for="degreeSelect" class="label"><span class="label-text font-bold text-gray-700">หลักสูตร (Degree)</span></label>
+                                        <select id="degreeSelect" bind:value={selectedDegreeId} onchange={handleDegreeChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
+                                            <option value="" disabled>-- เลือกหลักสูตร --</option>
+                                            {#each uniqueDegrees as degree}
+                                                <option value={degree.degree_id}>{degree.degree_name_th} ({degree.degree_name_en})</option>
+                                            {/each}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-control">
+                                        <label for="facultySelect" class="label"><span class="label-text font-bold text-gray-700">คณะ (Faculty)</span></label>
+                                        <select id="facultySelect" bind:value={selectedFacultyId} onchange={handleFacultyChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedDegreeId}>
+                                            <option value="" disabled>-- เลือกคณะ --</option>
+                                            {#each availableFaculties as item}
+                                                <option value={item.faculty.faculty_id}>{item.faculty.faculty_name_th} ({item.faculty.faculty_name_en})</option>
+                                            {/each}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-control">
+                                        <label for="deptSelect" class="label"><span class="label-text font-bold text-gray-700">ภาควิชา (Department)</span></label>
+                                        <select id="deptSelect" bind:value={selectedDepartmentId} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedFacultyId}>
+                                            <option value="" disabled>-- เลือกภาควิชา --</option>
+                                            {#each availableDepartments as dept}
+                                                <option value={dept.department_id}>{dept.department_name_th} ({dept.department_name_en})</option>
+                                            {/each}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="divider my-6"></div>
+
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="label-text font-bold text-gray-700">อาจารย์ที่ปรึกษา (Advisors)</span>
+                                    <button type="button" class="btn btn-sm btn-outline border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white" onclick={addAdvisor}>
+                                        <Plus class="w-4 h-4"/> เพิ่มอาจารย์
+                                    </button>
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    {#each selectedAdvisors as advisor, index}
+                                        <div class="flex items-center gap-2 w-full">
+                                            <select bind:value={advisor.advisor_id} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
+                                                <option value="" disabled>-- เลือกอาจารย์ที่ปรึกษา --</option>
+                                                {#each masterAdvisors as masterAdv}
+                                                    <option value={masterAdv.advisor_id}>{masterAdv.advisor_name_th} ({masterAdv.advisor_name_en})</option>
+                                                {/each}
+                                            </select>
+                                            <button type="button" class="btn btn-square btn-error btn-outline" onclick={() => removeAdvisor(index)} disabled={selectedAdvisors.length === 1}>
+                                                <Trash2 class="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    {/each}
+                                </div>
+                            </div>
+                                
+                            <div class="mt-8 border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm w-full">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-orange-200 pb-3 mb-6 gap-3">
+                                    <h3 class="text-base md:text-lg font-bold text-orange-800">
+                                        3.4 คำสำคัญ (Keywords)
+                                    </h3>
+                                    <button type="button" onclick={addKeyword} class="btn btn-sm btn-outline btn-primary bg-white">
+                                        <Plus class="w-4 h-4"/> เพิ่มคำสำคัญ
+                                    </button>
                                 </div>
                                 
-                                <span class="text-gray-700 font-bold text-sm bg-white px-3 py-1 rounded-full shadow-sm border border-gray-100 group-hover:text-orange-600 transition-colors">หน้า {id}</span>
-
-                                {#if selectedPages.includes(id)}
-                                    <div class="absolute -top-3 -right-3 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white border-2 border-white shadow-md z-10 animate-in zoom-in duration-200">
-                                        <FileCheckCorner class="h-4 w-4" />
-                                    </div>
-                                {/if}
-                            </button>
-                        {/each}
-                    </div>
-                </div>
-
-                <div class="mt-8 bg-blue-50 border border-blue-200 rounded-xl p-4 md:p-6 text-center font-medium shadow-sm">
-                    <p class="text-base md:text-lg text-blue-900">หน้าที่คุณเลือกไว้: <span class="text-blue-700 font-bold">{selectedPages.length === 0 ? 'ยังไม่ได้เลือกหน้า' : selectedPages.join(', ')}</span></p>
-                </div>
-            </div>
-
-            <div class="max-w-5xl mx-auto flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-8 mt-8">
-                <button 
-                    class="btn btn-outline w-full md:w-1/2 text-lg h-14 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 rounded-xl bg-white shadow-sm" 
-                    onclick={prevStep}>
-                    ย้อนกลับ
-                </button>
-                <button 
-                    class="w-full md:w-1/2 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md"
-                    onclick={nextStep}
-                    disabled={selectedPages.length !== 2}
-                >
-                    ถัดไป (เลือกแล้ว {selectedPages.length}/2)
-                </button>
-            </div>
-        </section>
-    {/if}
-
-    {#if currentStep === 3}
-        <!-- ขั้นตอนที่ 3: ตรวจสอบข้อมูล OCR และบันทึก -->
-        <section class="max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-300">
-            <form onsubmit={handleSubmit}>
-                <div class="bg-white border border-gray-500 shadow-sm rounded-2xl p-6 md:p-10">
-                    <h2 class="text-lg md:text-xl lg:text-2xl font-bold text-black text-center mb-10">ขั้นตอนที่ 3 : ตรวจสอบและแก้ไขข้อมูล OCR</h2>
-                        
-                    {#if isLoadingOcr}
-                        <div class="flex flex-col items-center gap-4 mb-8">
-                            <span class="loading loading-spinner loading-lg text-orange-500"></span>
-                            <p class="text-orange-600 font-bold animate-pulse">ระบบกำลังอ่านและสกัดข้อมูลจาก PDF...</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {#each Array(2) as _}
-                                <div class="border border-gray-200 rounded-xl p-6 bg-gray-50 animate-pulse">
-                                    <div class="h-6 w-48 bg-gray-300 rounded mb-8"></div>
-                                    <div class="space-y-6">
-                                        <div class="h-14 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                        <div class="grid grid-cols-2 gap-4">
-                                            <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                            <div class="h-12 bg-white border border-gray-200 rounded-lg w-full"></div>
+                                <div class="flex flex-col gap-4">
+                                    {#each pairedKeywords as kw, index}
+                                        <div class="flex flex-col md:flex-row gap-4 items-start md:items-center p-4 ">
+                                            <div class="flex-1 w-full">
+                                                <label for="keyword-th-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">คำสำคัญ (TH)</span></label>
+                                                <SpellCheckTextarea 
+                                                    bind:value={kw.th} 
+                                                    rows={1}
+                                                    inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
+                                                />
+                                            </div>
+                                            <div class="flex-1 w-full">
+                                                <label for="keyword-en-{index}" class="label py-1"><span class="label-text font-bold text-gray-700">Keyword (EN)</span></label>
+                                                <SpellCheckTextarea 
+                                                    bind:value={kw.en} 
+                                                    rows={1}
+                                                    inputClass="textarea textarea-bordered focus:border-orange-500 border-orange-300 focus:outline-orange-600 w-full bg-white text-sm md:text-base min-h-0 h-11 py-2.5" 
+                                                />
+                                            </div>
+                                            <button type="button" class="btn btn-square btn-error btn-outline md:mt-7 shrink-0" onclick={() => removeKeyword(index)}>
+                                                <Trash2 class="w-5 h-5" />
+                                            </button>
                                         </div>
-                                        <div class="h-32 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                        <div class="h-16 bg-white border border-gray-200 rounded-lg w-full"></div>
-                                    </div>
+                                    {/each}
+
+                                    {#if pairedKeywords.length === 0}
+                                        <p class="text-center text-gray-500 py-4">ยังไม่มีคำสำคัญ</p>
+                                    {/if}
                                 </div>
-                            {/each}
-                        </div>
-                    {:else}
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-                            <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-orange-50/30 shadow-sm">
-                                <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">3.1 ข้อมูลภาษาไทย</h3>
-                                <OcrForm bind:data={ocrDataThai} lang="th" />
                             </div>
                             
-                            <div class="border border-orange-200 rounded-xl p-4 md:p-6 lg:p-8 bg-blue-50/30 shadow-sm">
-                                <h3 class="text-base md:text-lg font-bold text-orange-800 border-b border-orange-200 pb-3 mb-6">3.2 ข้อมูลภาษาอังกฤษ</h3>
-                                <OcrForm bind:data={ocrDataEnglish} lang="en" />
-                            </div>
-                        </div>
-                    {/if}
-                </div>
-
-                <div class="max-w-7xl mx-auto flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-8 mt-8">
-                    <button 
-                        type="button"
-                        class="btn btn-outline w-full md:w-1/3 text-lg h-14 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 rounded-xl bg-white shadow-sm" 
-                        onclick={prevStep}
-                        disabled={isLoadingOcr}>
-                        ย้อนกลับ
-                    </button>
-                    <button 
-                        type="submit"
-                        class="w-full md:w-2/3 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 shadow-md flex items-center justify-center gap-2" 
-                        disabled={isLoadingOcr}>
-                        {#if isLoadingOcr}
-                            <span class="loading loading-spinner loading-sm"></span> กำลังบันทึก...
-                        {:else}
-                            <FileCheckCorner class="h-5 w-5"/> บันทึกข้อมูล
                         {/if}
-                    </button>
-                </div>
-            </form>
-        </section>
+                    </div>
+
+                    <!-- Navigation buttons -->
+                    <div class="max-w-7xl mx-auto flex flex-col-reverse md:flex-row justify-between gap-4 md:gap-8 mt-8">
+                        <button
+                            type="button"
+                            class="btn btn-outline w-full md:w-1/3 text-lg h-14 border border-gray-300 text-gray-700 hover:bg-gray-100 hover:border-gray-400 rounded-xl bg-white shadow-sm"
+                            onclick={prevStep}
+                            disabled={isLoadingOcr || isSaving}
+                        >
+                            ย้อนกลับ
+                        </button>
+                        <button
+                            type="submit"
+                            class="w-full md:w-2/3 text-lg md:text-xl h-14 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold transition-colors duration-300 cursor-pointer disabled:bg-gray-400 shadow-md flex items-center justify-center gap-2"
+                            disabled={isLoadingOcr || isSaving}
+                        >
+                            {#if isLoadingOcr}
+                                <span class="loading loading-spinner loading-sm"></span> กำลังอ่านข้อมูล...
+                            {:else if isSaving}
+                                <span class="loading loading-spinner loading-sm"></span> กำลังบันทึก...
+                            {:else}
+                                <FileCheckCorner class="h-5 w-5" /> บันทึกข้อมูล
+                            {/if}
+                        </button>
+                    </div>
+                </form>
+            </section>
+        {/if}
     {/if}
 </main>

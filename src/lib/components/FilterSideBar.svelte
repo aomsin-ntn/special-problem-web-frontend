@@ -21,7 +21,7 @@
     let openFaculties = $state<Record<string, boolean>>({});
 
     const currentBEYear = new Date().getFullYear() + 543;
-    const recentYears = Array.from({ length: 4 }, (_, i) => String(currentBEYear - i));
+    const recentYears = Array.from({ length: 7 }, (_, i) => String(currentBEYear - i));
 
     function toggleSection(section: string) { 
         openSections[section] = !openSections[section]; 

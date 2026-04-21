@@ -1,6 +1,7 @@
 <script lang="ts">
     interface Props {
         id?: string;
+        departments?: string[];
         titleThai?: string;
         titleEnglish?: string;
         keywords?: string[];
@@ -8,6 +9,7 @@
 
     let {
         id = '1',
+        departments = [],
         titleThai = "ไม่มีชื่อโปรเจกต์",
         titleEnglish = "No Title",
         keywords = []
@@ -23,10 +25,13 @@
     onclick={handleClick}
     class="w-full max-w-60 h-85 bg-white rounded-xl border border-gray-600 shadow-sm px-5 py-5 flex flex-col gap-3 hover:-translate-y-2 transition-transform duration-300 cursor-pointer hover:shadow-lg text-left"
 >
-    <div class="shrink-0">
-        <span class="badge badge-outline border-gray-600 bg-gray-600 text-gray-200 text-xs font-medium rounded-full ">
-            ปัญหาพิเศษ
-        </span>
+    <div class="flex flex-col gap-1.5  shrink-0">
+        {#each departments as department (department)}
+            <div class="badge badge-outline border-gray-600 bg-gray-600 text-gray-200 text-xs font-medium rounded-full ">
+                {department}
+            </div>
+        {/each}
+        
     </div>
 
     <hr class="border-gray-600 my-1"/>

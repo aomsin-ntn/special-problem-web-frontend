@@ -1,6 +1,6 @@
 <script lang="ts">
     import kmitlLogo from '$lib/assets/Kmitl-logo-navbar.png';
-    import { Menu, X, LogOut, User } from 'lucide-svelte';
+    import { Menu, X, LogOut, User, FileText, Book } from 'lucide-svelte';
     import { goto } from '$app/navigation';
     import { slide } from 'svelte/transition';
     import { authStore, logoutAuth } from '$lib/stores/authStore';
@@ -80,6 +80,20 @@
                             class="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-800 hover:bg-orange-50 transition-colors bg-transparent border-none cursor-pointer">
                             <User size={16} /> Profile
                         </button>
+                        {#if $authStore.user.role === 'staff' || $authStore.user.role === 'professor'}
+                            <button 
+                                type="button" 
+                                onclick={() => handleNavigate('/project-report')} 
+                                class="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-800 hover:bg-orange-50 transition-colors bg-transparent border-none cursor-pointer">
+                                <FileText size={16} /> Project report
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick={() => handleNavigate('/dictionary-report')} 
+                                class="flex w-full items-center gap-3 px-4 py-3 text-sm text-gray-800 hover:bg-orange-50 transition-colors bg-transparent border-none cursor-pointer">
+                                <Book size={16} />Dictionary report
+                            </button>
+                        {/if}
                         <button 
                             type="button" 
                             onclick={handleLogout} 
@@ -137,6 +151,24 @@
                         <User size={16} /> Profile
                     </button>
                 </li>
+                {#if $authStore.user.role === 'staff' || $authStore.user.role === 'professor'}
+                    <li class="w-full">
+                        <button 
+                            type="button" 
+                            onclick={() => handleNavigate('/project-report')} 
+                            class="w-full text-left px-3 py-2 hover:bg-orange-600 rounded transition-colors flex items-center gap-2 bg-transparent border-none">
+                            <FileText size={16} /> Project report
+                        </button>
+                    </li>
+                    <li class="w-full">
+                        <button 
+                            type="button" 
+                            onclick={() => handleNavigate('/dictionary-report')} 
+                            class="w-full text-left px-3 py-2 hover:bg-orange-600 rounded transition-colors flex items-center gap-2 bg-transparent border-none">
+                            <Book size={16} /> Dictionary report
+                        </button>
+                    </li>
+                {/if}
                 <li class="w-full">
                     <button 
                         type="button" 

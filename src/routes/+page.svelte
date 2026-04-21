@@ -8,6 +8,7 @@
 
 	interface ProjectCard {
         id: string;
+		departments?: string[];
         titleThai: string;
         titleEnglish: string;
         keywords: string[];
@@ -20,6 +21,7 @@
 
     interface ApiProject {
         project_id: string;
+		departments?: { department_name_th: string }[];
         title_th: string;
         title_en: string;
         keywords?: { keyword_text_th: string }[];
@@ -46,7 +48,8 @@
                         id: project.project_id,
                         titleThai: project.title_th,
                         titleEnglish: project.title_en,
-                        keywords: project.keywords ? project.keywords.map((k) => k.keyword_text_th) : []
+                        keywords: project.keywords ? project.keywords.map((k) => k.keyword_text_th) : [],
+						departments: project.departments ? project.departments.map((d) => d.department_name_th) : []
 					}));
 				} else {
 					console.error('Failed to fetch popular projects:', response.status);
@@ -210,6 +213,7 @@
                             <div class="snap-start shrink-0 w-65 md:w-70 lg:w-75">
                                 <CardPopular 
                                     id={cardPop.id}
+									departments={cardPop.departments}
                                     titleThai={cardPop.titleThai}
                                     titleEnglish={cardPop.titleEnglish}
                                     keywords={cardPop.keywords}
