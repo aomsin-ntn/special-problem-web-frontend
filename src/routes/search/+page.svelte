@@ -143,7 +143,7 @@
                     queryParams.append('order', order);
                 }
 
-                const response = await fetch(`${PUBLIC_API_URL}/project/?${queryParams.toString()}`);
+                const response = await fetch(`${PUBLIC_API_URL}/project/search?${queryParams.toString()}`);
                 if (response.ok) {
                     const responseData = await response.json();
                     projects = responseData.data || []; 

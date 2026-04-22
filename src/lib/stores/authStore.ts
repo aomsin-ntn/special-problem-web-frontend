@@ -9,6 +9,7 @@ interface AuthState {
 interface User {
     id: string;
     student_id: string;
+    name: string;
     email: string;
     role: string;
 }

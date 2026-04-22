@@ -56,7 +56,7 @@
 				}
 
 				if (profileData?.studentId && $authStore.user?.role === 'student') {
-					const projectRes = await fetch(`${PUBLIC_API_URL}/project/?search=${profileData.studentId}&order=asc`, {
+					const projectRes = await fetch(`${PUBLIC_API_URL}/project/search?=${profileData.studentId}&order=asc`, {
 						credentials: 'include'
 					});
 
