@@ -448,11 +448,11 @@
                             <div class="grid grid-cols-1 gap-4">
                                 <div class="form-control">
                                     <label for="abstract_th" class="label"><span class="label-text font-bold">บทคัดย่อ (TH)</span></label>
-                                    <textarea id="abstract_th" bind:value={project.abstract_th} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200"></textarea>
+                                    <textarea id="abstract_th" bind:value={project.abstract_th} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
                                 </div>
                                 <div class="form-control">
                                     <label for="abstract_en" class="label"><span class="label-text font-bold">บทคัดย่อ (EN)</span></label>
-                                    <textarea id="abstract_en" bind:value={project.abstract_en} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200"></textarea>
+                                    <textarea id="abstract_en" bind:value={project.abstract_en} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
                                 </div>
                             </div>
                         </section>
