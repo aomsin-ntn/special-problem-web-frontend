@@ -292,6 +292,25 @@
 
     const addKeyword = () => project.keywords.push({ keyword_text_th: '', keyword_text_en: '' });
     const removeKeyword = (index: number) => project.keywords.splice(index, 1);
+
+        const handleTab = (e: KeyboardEvent, field: 'abstract_th' | 'abstract_en') => {
+        if (e.key === 'Tab') {
+            e.preventDefault(); // ป้องกันไม่ให้เคอร์เซอร์กระโดดไปช่องอื่น
+            
+            const target = e.target as HTMLTextAreaElement;
+            const start = target.selectionStart;
+            const end = target.selectionEnd;
+
+            // แทรกตัวอักษร Tab (\t) ลงไปตรงตำแหน่งที่เคอร์เซอร์อยู่
+            project[field] = project[field].substring(0, start) + '\t' + project[field].substring(end);
+
+            // จัดการให้เคอร์เซอร์ขยับไปอยู่หลัง Tab ที่เพิ่งแทรก
+            setTimeout(() => {
+                target.selectionStart = target.selectionEnd = start + 1;
+            }, 0);
+        }
+    };
+
 </script>
 
 <main class="min-h-screen bg-white py-10 px-4 text-black">
@@ -448,11 +467,11 @@
                             <div class="grid grid-cols-1 gap-4">
                                 <div class="form-control">
                                     <label for="abstract_th" class="label"><span class="label-text font-bold">บทคัดย่อ (TH)</span></label>
-                                    <textarea id="abstract_th" bind:value={project.abstract_th} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
+                                    <textarea id="abstract_th" bind:value={project.abstract_th} onkeydown={(e) => handleTab(e, 'abstract_th')} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
                                 </div>
                                 <div class="form-control">
                                     <label for="abstract_en" class="label"><span class="label-text font-bold">บทคัดย่อ (EN)</span></label>
-                                    <textarea id="abstract_en" bind:value={project.abstract_en} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
+                                    <textarea id="abstract_en" bind:value={project.abstract_en} onkeydown={(e) => handleTab(e, 'abstract_en')} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
                                 </div>
                             </div>
                         </section>
