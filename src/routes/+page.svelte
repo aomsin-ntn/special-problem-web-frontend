@@ -68,7 +68,7 @@
 					const data = await response.json();
 					menuCategories = data.map((item: any) => ({
 						label: item.faculty_name_th,
-						destination: `/project/search?faculty=${item.faculty_id}`
+						destination: `search?faculty=${item.faculty_id}`
 					}));
 				} else {
 					console.error('Failed to fetch menu categories:', response.status);
