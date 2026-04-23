@@ -35,10 +35,6 @@
 
 	$effect(() => {
 		// ถ้าไม่มีข้อมูลผู้ใช้ในระบบ ให้ Redirect ไปหน้า Login
-		if (!$authStore.isLoggedIn) {
-			goto('/login');
-			return;
-		}
 
 		// ดึงข้อมูลโปรไฟล์และรายการโปรเจกต์ของผู้ใช้เมื่อหน้าโหลด
 		const fetchProfileAndProject = async () => {
@@ -53,10 +49,12 @@
 						...data,
 						studentName: data.studentName || data.studentName
 					};
+				} else {
+					goto('/login');
 				}
 
 				if (profileData?.studentId && $authStore.user?.role === 'student') {
-					const projectRes = await fetch(`${PUBLIC_API_URL}/project/search?=${profileData.studentId}&order=asc`, {
+					const projectRes = await fetch(`${PUBLIC_API_URL}/project/search?search=${profileData.studentId}&order=asc`, {
 						credentials: 'include'
 					});
 
