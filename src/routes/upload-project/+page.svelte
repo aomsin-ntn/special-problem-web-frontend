@@ -194,7 +194,7 @@
             if (!ocrRes.ok) {
                 const errorData = await ocrRes.json();
                 
-                throw new Error(errorData.message || errorData.error || `เกิดข้อผิดพลาด: ${ocrRes.status}`);
+                throw new Error(errorData.detail || errorData.error || `เกิดข้อผิดพลาด: ${ocrRes.status}`);
             }
 
             const data  = await ocrRes.json();
