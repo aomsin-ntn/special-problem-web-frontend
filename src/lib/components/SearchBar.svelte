@@ -24,7 +24,7 @@
 
         const trimmedQuery = value.trim();
         if (trimmedQuery) {
-            goto(`/search?q=${encodeURIComponent(trimmedQuery)}`);
+            goto(`search?q=${encodeURIComponent(trimmedQuery)}`);
         } else {
             value = '';
         }

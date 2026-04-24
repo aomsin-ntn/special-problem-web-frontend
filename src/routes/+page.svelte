@@ -10,7 +10,7 @@
         id: string;
 		departments?: string[];
         titleThai: string;
-        titleEnglish: string;
+        titleEnglish?: string;
         keywords: string[];
     }
 
@@ -44,13 +44,18 @@
 				const response = await fetch(`${PUBLIC_API_URL}/project/most_downloaded`);
 				if (response.ok) {
 					const data: ApiProject[] = await response.json();
-                    cardsPopular = data.map((project) => ({
-                        id: project.project_id,
-                        titleThai: project.title_th,
-                        titleEnglish: project.title_en,
-                        keywords: project.keywords ? project.keywords.map((k) => k.keyword_text_th) : [],
-						departments: project.departments ? project.departments.map((d) => d.department_name_th) : []
-					}));
+                    cardsPopular = data.map((project) => {
+						const hasTh = !!project.title_th;
+
+						return {
+							id: project.project_id,
+							titleThai: hasTh ? project.title_th : project.title_en,
+							titleEnglish: hasTh ? project.title_en : undefined,
+							// 2. สลับภาษาให้ keywords และ departments ด้วย พร้อมใส่ .filter(Boolean) เพื่อลบค่า null ทิ้งป้องกันเว็บพัง
+							keywords: project.keywords ? project.keywords.map((k: any) => hasTh ? (k.keyword_text_th || k.keyword_text_en) : (k.keyword_text_en || k.keyword_text_th)).filter(Boolean) : [],
+							departments: project.departments ? project.departments.map((d) => d.department_name_th) : []
+						};
+					});
 				} else {
 					console.error('Failed to fetch popular projects:', response.status);
 				}
@@ -68,7 +73,7 @@
 					const data = await response.json();
 					menuCategories = data.map((item: any) => ({
 						label: item.faculty_name_th,
-						destination: `/search?faculty=${item.faculty_id}`
+						destination: `search?faculty=${item.faculty_id}`
 					}));
 				} else {
 					console.error('Failed to fetch menu categories:', response.status);
@@ -211,11 +216,11 @@
                     {:else}
                         {#each cardsPopular as cardPop (cardPop.id)}
                             <div class="snap-start shrink-0 w-65 md:w-70 lg:w-75">
-                                <CardPopular 
+								<CardPopular 
                                     id={cardPop.id}
-									departments={cardPop.departments}
+                                    departments={cardPop.departments}
                                     titleThai={cardPop.titleThai}
-                                    titleEnglish={cardPop.titleEnglish}
+                                    titleEnglish={cardPop.titleEnglish} 
                                     keywords={cardPop.keywords}
                                 />
                             </div>

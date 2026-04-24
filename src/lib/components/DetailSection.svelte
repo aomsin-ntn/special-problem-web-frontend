@@ -20,7 +20,7 @@
         {#if children}
             {@render children()}
         {:else if value}
-            <p class="text-sm md:text-base lg:text-base">{value}</p>
+            <p class="whitespace-pre-wrap text-sm md:text-base lg:text-base">{value}</p>
         {/if}
     </div>
     

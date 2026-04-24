@@ -13,6 +13,7 @@
     import PageSelector   from '$lib/components/PageSelector.svelte';
     import OcrForm        from '$lib/components/OcrForm.svelte';
     import SpellCheckTextarea from '$lib/components/SpellCheckTextarea.svelte';
+    import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
     import Swal from 'sweetalert2';
 
     let isAccessDenied = $derived($authStore.user && $authStore.user.role !== 'student');
@@ -224,24 +225,27 @@
                 selectedAdvisors = [{ advisor_id: '' }];
             }
 
-            ocrDataThai = {
-                title:        form.title_th                  ?? '',
-                faculty:      form.faculty?.faculty_name_th  ?? '',
-                department:   form.department?.department_name_th ?? '',
-                degree:       form.degree?.degree_name_th    ?? '',
-                academicYear: form.academic_year             ?? '',
-                authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_th    ?? '', studentId: s.student_id ?? '' })),
-                advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_th ?? '' })),
-                abstract: form.abstract_th ?? '',
-                keywords: (form.keywords ?? []).map((k: any) => k.th ?? ''),
-            };
+            if (form.title_th) {
+                ocrDataThai = {
+                    title:        form.title_th                  ?? '',
+                    faculty:      form.faculty?.faculty_name_th  ?? '',
+                    department:   form.department?.department_name_th ?? '',
+                    degree:       form.degree?.degree_name_th    ?? '',
+                    academicYear: form.academic_year_be          ?? '',
+                    authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_th    ?? '', studentId: s.student_id ?? '' })),
+                    advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_th ?? '' })),
+                    abstract: form.abstract_th ?? '',
+                    keywords: (form.keywords ?? []).map((k: any) => k.th ?? ''),
+                };
+            }
+            
 
             ocrDataEnglish = {
                 title:        form.title_en                  ?? '',
                 faculty:      form.faculty?.faculty_name_en  ?? '',
                 department:   form.department?.department_name_en ?? '',
                 degree:       form.degree?.degree_name_en    ?? '',
-                academicYear: form.academic_year             ?? '',
+                academicYear: form.academic_year_ce          ?? '',
                 authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_en    ?? '', studentId: s.student_id ?? '' })),
                 advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_en ?? '' })),
                 abstract: form.abstract_en ?? '',
@@ -288,7 +292,8 @@
             title_en:      ocrDataEnglish.title,
             abstract_th:   ocrDataThai.abstract,
             abstract_en:   ocrDataEnglish.abstract,
-            academic_year: ocrDataThai.academicYear,
+            academic_year_be: ocrDataThai.academicYear,
+            academic_year_ce: ocrDataEnglish.academicYear,
             degree: {
                 degree_id: selectedDegreeId || null,
                 degree_name_th: degObj.degree_name_th || '',
@@ -336,6 +341,60 @@
             Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลไฟล์อ้างอิง', 'error'); 
             return; 
         }
+
+        // 1. ตรวจสอบข้อมูลภาษาอังกฤษ (บังคับทุกกรณี)
+        const isEngMissingText = ocrDataEnglish.title.trim() === '' || ocrDataEnglish.abstract.trim() === '' || ocrDataEnglish.academicYear.trim() === '';
+        
+        const isEngAuthorMissing = ocrDataEnglish.authors.length === 0 || ocrDataEnglish.authors.some(a => a.name.trim() === '' || !a.studentId || a.studentId.trim() === '');
+        
+        const isEngKeywordMissing = pairedKeywords.length === 0 || 
+                                    pairedKeywords.some(kw => kw.en.trim() === '');
+
+        if (isEngMissingText || isEngAuthorMissing || isEngKeywordMissing) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลภาษาอังกฤษ (ชื่อ, บทคัดย่อ, ปีการศึกษา, ผู้จัดทำพร้อมรหัส, คำสำคัญ) ให้ครบถ้วน', 'error');
+            return;
+        }
+
+        // 2. ตรวจสอบ Master Data (ต้องมีข้อมูล)
+        if (!selectedDegreeId || !selectedFacultyId || !selectedDepartmentId) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกหลักสูตร คณะ และภาควิชาให้ครบถ้วน', 'error');
+            return;
+        }
+
+        // 3. ตรวจสอบ Master Data (ความสอดคล้องกัน)
+        const isFacultyValid = availableFaculties.some(f => f?.faculty?.faculty_id === selectedFacultyId);
+        const isDepartmentValid = availableDepartments.some((d : any) => d.department_id === selectedDepartmentId);
+        
+        if (!isFacultyValid || !isDepartmentValid) {
+            Swal.fire('ข้อผิดพลาด', 'หลักสูตร คณะ หรือภาควิชาที่เลือกไม่สอดคล้องกัน กรุณาเลือกใหม่', 'error');
+            return;
+        }
+
+        // 4. ตรวจสอบ Advisor (ต้องมีข้อมูล)
+        if (selectedAdvisors.length === 0 || selectedAdvisors.some(adv => !adv.advisor_id)) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกอาจารย์ที่ปรึกษา', 'error');
+            return;
+        }
+
+        // 5. ตรวจสอบเงื่อนไขข้อมูลภาษาไทย (บังคับครบ ถ้ามีการกรอกมาบางส่วน)
+        const hasSomeThaiData = 
+            ocrDataThai.title.trim() !== '' || 
+            ocrDataThai.abstract.trim() !== '' || 
+            ocrDataThai.authors.some(a => a.name.trim() !== '' || (a.studentId && a.studentId.trim() !== ''));
+
+        if (hasSomeThaiData) {
+            const isThaiTitleIncomplete = ocrDataThai.title.trim() === '';
+            const isThaiAbstractIncomplete = ocrDataThai.abstract.trim() === '';
+            const isThaiAuthorIncomplete = ocrDataThai.authors.length === 0 || ocrDataThai.authors.some(a => a.name.trim() === '' || !a.studentId || a.studentId.trim() === '');
+            const isThaiKeywordIncomplete = pairedKeywords.length === 0 || 
+                                            pairedKeywords.some(kw => kw.th.trim() === '');
+
+            if (isThaiTitleIncomplete || isThaiAbstractIncomplete || isThaiAuthorIncomplete || isThaiKeywordIncomplete) {
+                Swal.fire('ข้อผิดพลาด', 'คุณมีการระบุข้อมูลภาษาไทย กรุณากรอกข้อมูลภาษาไทยที่จำเป็น (ชื่อ, บทคัดย่อ, ผู้จัดทำพร้อมรหัส, คำสำคัญ) ให้ครบถ้วน', 'error');
+                return;
+            }
+        }
+
         isSaving = true;
         try {
             const response = await fetch(`${PUBLIC_API_URL}/project/save`, {
@@ -486,32 +545,39 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div class="form-control md:col-span-2">
                                         <label for="degreeSelect" class="label"><span class="label-text font-bold text-gray-700">หลักสูตร (Degree)</span></label>
-                                        <select id="degreeSelect" bind:value={selectedDegreeId} onchange={handleDegreeChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
-                                            <option value="" disabled>-- เลือกหลักสูตร --</option>
-                                            {#each uniqueDegrees as degree}
-                                                <option value={degree.degree_id}>{degree.degree_name_th} ({degree.degree_name_en})</option>
-                                            {/each}
-                                        </select>
+                                        <SearchableDropdown 
+                                            bind:value={selectedDegreeId} 
+                                            onchange={handleDegreeChange}
+                                            placeholder="-- ค้นหาหลักสูตร --"
+                                            defaultOptionText="-- เลือกหลักสูตร --"
+                                            valueKey="id"
+                                            options={uniqueDegrees.map(d => ({ id: d.degree_id, label: `${d.degree_name_th} (${d.degree_name_en})` }))}
+                                        />
                                     </div>
 
                                     <div class="form-control">
                                         <label for="facultySelect" class="label"><span class="label-text font-bold text-gray-700">คณะ (Faculty)</span></label>
-                                        <select id="facultySelect" bind:value={selectedFacultyId} onchange={handleFacultyChange} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedDegreeId}>
-                                            <option value="" disabled>-- เลือกคณะ --</option>
-                                            {#each availableFaculties as item}
-                                                <option value={item.faculty.faculty_id}>{item.faculty.faculty_name_th} ({item.faculty.faculty_name_en})</option>
-                                            {/each}
-                                        </select>
+                                        <SearchableDropdown 
+                                            bind:value={selectedFacultyId} 
+                                            onchange={handleFacultyChange}
+                                            disabled={!selectedDegreeId}
+                                            placeholder="-- ค้นหาคณะ --"
+                                            defaultOptionText="-- เลือกคณะ --"
+                                            valueKey="id"
+                                            options={availableFaculties.map(item => ({ id: item.faculty.faculty_id, label: `${item.faculty.faculty_name_th} (${item.faculty.faculty_name_en})` }))}
+                                        />
                                     </div>
 
                                     <div class="form-control">
                                         <label for="deptSelect" class="label"><span class="label-text font-bold text-gray-700">ภาควิชา (Department)</span></label>
-                                        <select id="deptSelect" bind:value={selectedDepartmentId} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600" disabled={!selectedFacultyId}>
-                                            <option value="" disabled>-- เลือกภาควิชา --</option>
-                                            {#each availableDepartments as dept}
-                                                <option value={dept.department_id}>{dept.department_name_th} ({dept.department_name_en})</option>
-                                            {/each}
-                                        </select>
+                                        <SearchableDropdown 
+                                            bind:value={selectedDepartmentId} 
+                                            disabled={!selectedFacultyId}
+                                            placeholder="-- ค้นหาภาควิชา --"
+                                            defaultOptionText="-- เลือกภาควิชา --"
+                                            valueKey="id"
+                                            options={availableDepartments.map((dept: any) => ({ id: dept.department_id, label: `${dept.department_name_th} (${dept.department_name_en})` }))}
+                                        />
                                     </div>
                                 </div>
 
@@ -526,12 +592,13 @@
                                 <div class="flex flex-col gap-3">
                                     {#each selectedAdvisors as advisor, index}
                                         <div class="flex items-center gap-2 w-full">
-                                            <select bind:value={advisor.advisor_id} class="select select-bordered w-full bg-gray-600 focus:border-orange-500 focus:outline-orange-600">
-                                                <option value="" disabled>-- เลือกอาจารย์ที่ปรึกษา --</option>
-                                                {#each masterAdvisors as masterAdv}
-                                                    <option value={masterAdv.advisor_id}>{masterAdv.advisor_name_th} ({masterAdv.advisor_name_en})</option>
-                                                {/each}
-                                            </select>
+                                            <SearchableDropdown 
+                                                bind:value={advisor.advisor_id}
+                                                placeholder="-- ค้นหาอาจารย์ --"
+                                                defaultOptionText="-- เลือกอาจารย์ --"
+                                                valueKey="id"
+                                                options={masterAdvisors.map(a => ({ id: a.advisor_id, label: `${a.advisor_name_th} (${a.advisor_name_en})` }))}
+                                            />
                                             <button type="button" class="btn btn-square btn-error btn-outline" onclick={() => removeAdvisor(index)} disabled={selectedAdvisors.length === 1}>
                                                 <Trash2 class="w-5 h-5" />
                                             </button>

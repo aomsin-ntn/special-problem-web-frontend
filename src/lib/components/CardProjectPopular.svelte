@@ -11,7 +11,7 @@
         id = '1',
         departments = [],
         titleThai = "ไม่มีชื่อโปรเจกต์",
-        titleEnglish = "No Title",
+        titleEnglish = "",
         keywords = []
     }: Props = $props();
 
@@ -40,9 +40,11 @@
         <h3 class="text-black line-clamp-3 text-ellipsis text-base font-semibold leading-snug">
             {titleThai}
         </h3>
-        <p class="text-gray-400 line-clamp-3 text-ellipsis text-sm font-medium leading-snug">
-            {titleEnglish}
-        </p>
+        {#if titleEnglish}
+            <p class="text-gray-400 line-clamp-3 text-ellipsis text-sm font-medium leading-snug">
+                {titleEnglish}
+            </p>
+        {/if}
     </div>
 
     <hr class="border-gray-600 my-1"/>

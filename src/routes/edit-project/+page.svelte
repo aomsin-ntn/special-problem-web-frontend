@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import { PUBLIC_API_URL } from '$env/static/public';
     import { FileText, RefreshCcw, Save, Plus, Trash2, Tag } from 'lucide-svelte';
+    import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
     import Swal from 'sweetalert2';
 
     let projectId = $derived($page.url.searchParams.get('id'));
@@ -148,10 +149,10 @@
 
         try {
 
-            if (!project.title_th || !project.degree.degree_id || !project.department.department_id) {
+            if (!project.title_en || !project.degree.degree_id || !project.department.department_id || !project.faculty.faculty_id || project.advisors.length === 0) {
                 Swal.fire({
                     title: 'ข้อมูลไม่ครบถ้วน', 
-                    text: 'กรุณากรอกชื่อโครงงานและเลือกหลักสูตร/สังกัดให้ครบถ้วน', 
+                    text: 'กรุณากรอกข้อมูลให้ครบถ้วน', 
                     icon: 'warning',
                     confirmButtonColor: '#f97316'
                 });
@@ -165,7 +166,8 @@
                 title_en: project.title_en,
                 abstract_th: project.abstract_th,
                 abstract_en: project.abstract_en,
-                academic_year: project.academic_year,
+                academic_year_be: project.academic_year_be,
+                academic_year_ce: project.academic_year_ce,
                 
                 degree: { 
                     degree_id: project.degree?.degree_id || null,
@@ -206,7 +208,7 @@
             };
 
             // 3. ส่งข้อมูลไปอัปเดตที่ FastAPI
-            const res = await fetch(`${PUBLIC_API_URL}/project/save_update_project_data/${projectId}`, {
+            const res = await fetch(`${PUBLIC_API_URL}/project/update_project/${projectId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -291,6 +293,25 @@
 
     const addKeyword = () => project.keywords.push({ keyword_text_th: '', keyword_text_en: '' });
     const removeKeyword = (index: number) => project.keywords.splice(index, 1);
+
+        const handleTab = (e: KeyboardEvent, field: 'abstract_th' | 'abstract_en') => {
+        if (e.key === 'Tab') {
+            e.preventDefault(); // ป้องกันไม่ให้เคอร์เซอร์กระโดดไปช่องอื่น
+            
+            const target = e.target as HTMLTextAreaElement;
+            const start = target.selectionStart;
+            const end = target.selectionEnd;
+
+            // แทรกตัวอักษร Tab (\t) ลงไปตรงตำแหน่งที่เคอร์เซอร์อยู่
+            project[field] = project[field].substring(0, start) + '\t' + project[field].substring(end);
+
+            // จัดการให้เคอร์เซอร์ขยับไปอยู่หลัง Tab ที่เพิ่งแทรก
+            setTimeout(() => {
+                target.selectionStart = target.selectionEnd = start + 1;
+            }, 0);
+        }
+    };
+
 </script>
 
 <main class="min-h-screen bg-white py-10 px-4 text-black">
@@ -342,8 +363,12 @@
                                     <input id="title_en" type="text" bind:value={project.title_en} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
                                 </div>
                                 <div class="form-control w-1/3">
-                                    <label for="academic_year" class="label"><span class="label-text font-bold">ปีการศึกษา</span></label>
-                                    <input id="academic_year" type="text" bind:value={project.academic_year} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
+                                    <label for="academic_year_be" class="label"><span class="label-text font-bold">ปีการศึกษา (TH)</span></label>
+                                    <input id="academic_year_be" type="text" bind:value={project.academic_year_be} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
+                                </div>
+                                <div class="form-control w-1/3">
+                                    <label for="academic_year_ce" class="label"><span class="label-text font-bold">ปีการศึกษา (EN)</span></label>
+                                    <input id="academic_year_ce" type="text" bind:value={project.academic_year_ce} class="input input-bordered w-full focus:ring-2 focus:ring-orange-200 bg-gray-600" />
                                 </div>
                             </div>
                         </section>
@@ -358,54 +383,51 @@
                                 
                                 <div class="form-control md:col-span-2">
                                     <label for="degree" class="label"><span class="label-text font-bold">หลักสูตร (Degree)</span></label>
-                                    <select 
-                                        id="degree"
+                                    <SearchableDropdown 
                                         bind:value={project.degree.degree_id} 
                                         onchange={handleDegreeChange}
-                                        class="select select-bordered w-full bg-gray-600 "
-                                    >
-                                        <option value="" disabled>-- เลือกหลักสูตร --</option>
-                                        {#each uniqueDegrees as degree}
-                                            <option value={degree.degree_id}>
-                                                {degree.degree_name_th} ({degree.degree_name_en})
-                                            </option>
-                                        {/each}
-                                    </select>
+                                        placeholder="-- เลือกหลักสูตร --"
+                                        labelKey="label"
+                                        valueKey="id"
+                                        defaultOptionText = "-- เลือกหลักสูตร --"
+                                        options={masterDegrees.map(d => ({
+                                            id: d.degree_id,
+                                            label: `${d.degree_name_th} (${d.degree_name_en})`
+                                        }))}
+                                    />
                                 </div>
 
                                 <div class="form-control">
                                     <label for="faculty" class="label"><span class="label-text font-bold">คณะ (Faculty)</span></label>
-                                    <select 
-                                        id="faculty"
+                                    <SearchableDropdown 
                                         bind:value={project.faculty.faculty_id} 
-                                        onchange={handleFacultyChange} 
-                                        class="select select-bordered w-full bg-gray-600"
-                                        disabled={!project.degree.degree_id}
-                                    >
-                                        <option value="" disabled>-- เลือกคณะ --</option>
-                                        {#each availableFaculties as item}
-                                            <option value={item.faculty.faculty_id}>
-                                                {item.faculty.faculty_name_th} ({item.faculty.faculty_name_en})
-                                            </option>
-                                        {/each}
-                                    </select>
+                                        onchange={handleFacultyChange}
+                                        placeholder="-- เลือกคณะ --"
+                                        labelKey="label"
+                                        valueKey="id"
+                                        defaultOptionText = "-- เลือกคณะ --"
+                                        options={availableFaculties.map(f => ({
+                                            id: f.faculty.faculty_id,
+                                            label: `${f.faculty.faculty_name_th} (${f.faculty.faculty_name_en})`
+                                        }))}
+                                        disabled={!project.degree?.degree_id}
+                                    />
                                 </div>
 
                                 <div class="form-control">
                                     <label for="department" class="label"><span class="label-text font-bold">ภาควิชา (Department)</span></label>
-                                    <select 
-                                        id="department"
+                                    <SearchableDropdown 
                                         bind:value={project.department.department_id} 
-                                        class="select select-bordered w-full bg-gray-600" 
-                                        disabled={!project.faculty.faculty_id}
-                                    >
-                                        <option value="" disabled>-- เลือกภาควิชา --</option>
-                                        {#each availableDepartments as dept}
-                                            <option value={dept.department_id}>
-                                                {dept.department_name_th} ({dept.department_name_en})
-                                            </option>
-                                        {/each}
-                                    </select>
+                                        placeholder="-- เลือกภาควิชา --"
+                                        labelKey="label"
+                                        valueKey="id"
+                                        defaultOptionText = "-- เลือกภาควิชา --"
+                                        options={availableDepartments.map((d : any) => ({
+                                            id: d.department_id,
+                                            label: `${d.department_name_th} (${d.department_name_en})`
+                                        }))}
+                                        disabled={!project.faculty?.faculty_id}
+                                    />
                                 </div>
                             </div>
                         </section>
@@ -420,14 +442,16 @@
                             <div class="flex flex-col gap-3">
                                 {#each project.advisors as adv, index}
                                     <div class="flex items-center gap-2">
-                                        <select bind:value={adv.advisor_id} class="select select-bordered w-full bg-gray-600">
-                                            <option value="" disabled>-- เลือกอาจารย์ที่ปรึกษา --</option>
-                                            {#each masterAdvisors as masterAdv}
-                                                <option value={masterAdv.advisor_id}>
-                                                    {masterAdv.advisor_name_th} ({masterAdv.advisor_name_en})
-                                                </option>
-                                            {/each}
-                                        </select>
+                                        <SearchableDropdown 
+                                            bind:value={adv.advisor_id} 
+                                            placeholder="-- เลือกอาจารย์ที่ปรึกษา --"
+                                            labelKey="label"
+                                            valueKey="id"
+                                            options={masterAdvisors.map(a => ({
+                                                id: a.advisor_id,
+                                                label: `${a.advisor_name_th} (${a.advisor_name_en})`
+                                            }))}
+                                        />
                                         <button type="button" onclick={() => removeAdvisor(index)} class="btn btn-square btn-error btn-outline" aria-label="ลบ">
                                             <Trash2 class="w-4 h-4" />
                                         </button>
@@ -443,11 +467,11 @@
                             <div class="grid grid-cols-1 gap-4">
                                 <div class="form-control">
                                     <label for="abstract_th" class="label"><span class="label-text font-bold">บทคัดย่อ (TH)</span></label>
-                                    <textarea id="abstract_th" bind:value={project.abstract_th} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200"></textarea>
+                                    <textarea id="abstract_th" bind:value={project.abstract_th} onkeydown={(e) => handleTab(e, 'abstract_th')} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
                                 </div>
                                 <div class="form-control">
                                     <label for="abstract_en" class="label"><span class="label-text font-bold">บทคัดย่อ (EN)</span></label>
-                                    <textarea id="abstract_en" bind:value={project.abstract_en} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200"></textarea>
+                                    <textarea id="abstract_en" bind:value={project.abstract_en} onkeydown={(e) => handleTab(e, 'abstract_en')} class="textarea textarea-bordered w-full h-32 bg-gray-600 focus:ring-2 focus:ring-orange-200 leading-relaxed"></textarea>
                                 </div>
                             </div>
                         </section>

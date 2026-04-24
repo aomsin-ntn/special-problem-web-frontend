@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import { PUBLIC_API_URL } from '$env/static/public';
     import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-svelte';
+    import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
 
     let faculties = $state<any[]>([]);
     let projects = $state<any[]>([]);
@@ -43,21 +44,17 @@
         if (!dateString) return "-";
         const date = new Date(dateString);
         
-        // รูปแบบวันที่: 20 เม.ย. 2569
-        const datePart = date.toLocaleDateString('th-TH', {
+        const formatter = new Intl.DateTimeFormat('th-TH', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
-        });
-
-        // รูปแบบเวลา: 17:30
-        const timePart = date.toLocaleTimeString('th-TH', {
+            day: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false // ใช้รูปแบบ 24 ชั่วโมง
+            hour12: false, // ใช้รูปแบบ 24 ชั่วโมง [cite: 12]
+            timeZone: 'UTC' // บังคับ Timezone เป็น UTC อย่างเคร่งครัด
         });
 
-        return `${datePart} ${timePart} น.`;
+        return `${formatter.format(date)} (UTC)`;
     }
 
     function handleSortColumn(column: string) {
@@ -130,7 +127,7 @@
                 }
 
                 // เรียก API ไปที่ Endpoint /report ที่มีตัวล็อก RBAC
-                const response = await fetch(`${PUBLIC_API_URL}/project/report?${queryParams.toString()}`, {
+                const response = await fetch(`${PUBLIC_API_URL}/report/project?${queryParams.toString()}`, {
                     credentials: 'include'
                 });
 
@@ -177,32 +174,33 @@
                 
                 <div class="flex flex-col">
                     <label for="year-filter" class="text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา</label>
-                    <select id="year-filter" bind:value={selectedYear} class="select select-bordered w-full bg-white border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-700">
-                        <option value="">ทั้งหมด</option>
-                        {#each recentYears as year}
-                            <option value={year}>{year}</option>
-                        {/each}
-                    </select>
+                    <SearchableDropdown 
+                        bind:value={selectedYear} 
+                        placeholder="ปี..." defaultOptionText="ทั้งหมด" valueKey="id"
+                        options={recentYears.map(y => ({ id: y, label: y }))}
+                    />
                 </div>
 
                 <div class="flex flex-col">
                     <label for="faculty-filter" class="text-sm font-semibold text-gray-700 mb-1">คณะ</label>
-                    <select id="faculty-filter" bind:value={selectedFaculty} onchange={() => selectedDepartment = ''} class="select select-bordered w-full bg-white border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-700">
-                        <option value="">ทั้งหมด</option>
-                        {#each faculties as fac}
-                            <option value={fac.id}>{fac.label}</option>
-                        {/each}
-                    </select>
+                    <SearchableDropdown 
+                        bind:value={selectedFaculty} 
+                        onchange={() => selectedDepartment = ''}
+                        placeholder="ค้นหาคณะ..." 
+                        defaultOptionText="ทั้งหมด" 
+                        valueKey="id"
+                        options={faculties}
+                    />
                 </div>
 
                 <div class="flex flex-col">
-                    <label for="department-filter" class="text-sm font-semibold text-gray-700 mb-1">สาขาวิชา</label>
-                    <select id="department-filter" bind:value={selectedDepartment} disabled={!selectedFaculty} class="select select-bordered w-full bg-white border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-700 disabled:bg-gray-500">
-                        <option value="">ทั้งหมด</option>
-                        {#each availableDepartments() as dept}
-                            <option value={dept.id}>{dept.label}</option>
-                        {/each}
-                    </select>
+                    <label for="department-filter" class="text-sm font-semibold text-gray-700 mb-1">ภาควิชา</label>
+                    <SearchableDropdown 
+                        bind:value={selectedDepartment} 
+                        disabled={!selectedFaculty}
+                        placeholder="ค้นหาภาควิชา..." defaultOptionText="ทั้งหมด" valueKey="id"
+                        options={availableDepartments()}
+                    />
                 </div>
             </div>
         </div>
@@ -276,6 +274,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         {#each projects as item}
+                            {@const hasTh = !!item.project.title_th}
                             <tr 
                                 onclick={() => goto(`/project-detail?id=${item.project.project_id}`)}
                                 class="hover:bg-orange-50 cursor-pointer transition-colors"
@@ -287,14 +286,18 @@
                                 </td>
                                 <td class="py-4">
                                     {#each item.users as user}
-                                        <div class="text-sm text-gray-700">{user.user_name_th}</div>
+                                        <div class="text-sm text-gray-700">
+                                            {hasTh ? user.user_name_th  : user.user_name_en}
+                                        </div>
                                     {/each}
                                 </td>
                                 <td class="py-4">
-                                    <div class="font-semibold text-gray-700 line-clamp-2">{item.project.title_th}</div>
+                                    <div class="font-semibold text-gray-700 line-clamp-2">
+                                        {hasTh ? item.project.title_th : item.project.title_en}
+                                    </div>
                                     <div class="text-xs text-gray-700 mt-1 line-clamp-1">{item.department?.department_name_th}</div>
                                 </td>
-                                <td class="py-4 text-gray-700">{item.project.academic_year}</td>
+                                <td class="py-4 text-gray-700">{item.project.academic_year_be}</td>
                                 <td class="py-4 text-gray-700 text-xs">{formatDate(item.project.created_at)}</td>
                                 <td class="py-4 text-center">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">

@@ -69,7 +69,7 @@
                     onclick={() => isDropdownOpen = !isDropdownOpen} 
                     class="flex items-center gap-2 hover:text-yellow-300 transition-colors bg-transparent border-none cursor-pointer">
                     <User size={18} />
-                    <span class="hidden lg:inline">{$authStore.user?.email}</span>
+                    <span class="hidden lg:inline">{$authStore.user?.user_name_th}</span>
                 </button>
                 
                 {#if isDropdownOpen}

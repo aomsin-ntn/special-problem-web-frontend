@@ -7,7 +7,7 @@
         faculty?: string;
         department?: string;
         titleThai?: string;
-        titleEnglish?: string;
+        titleEnglish?: string | null;
         author?: string[];
         advisor?: string[];
         semester?: string;
@@ -62,7 +62,9 @@
 
         <div>
             <p class="text-black line-clamp-2 text-base md:text-lg font-semibold mb-1">{titleThai}</p>
-            <p class="text-gray-700 line-clamp-2 text-xs md:text-sm font-medium">{titleEnglish}</p>
+            {#if titleEnglish}
+                <p class="text-gray-700 line-clamp-2 text-xs md:text-sm font-medium">{titleEnglish}</p>
+            {/if}
         </div>
 
         <div class="w-full flex flex-col sm:flex-row gap-4 sm:gap-8 mt-2">
