@@ -43,21 +43,17 @@
         if (!dateString) return "-";
         const date = new Date(dateString);
         
-        // รูปแบบวันที่: 20 เม.ย. 2569
-        const datePart = date.toLocaleDateString('th-TH', {
+        const formatter = new Intl.DateTimeFormat('th-TH', {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
-        });
-
-        // รูปแบบเวลา: 17:30
-        const timePart = date.toLocaleTimeString('th-TH', {
+            day: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false // ใช้รูปแบบ 24 ชั่วโมง
+            hour12: false, // ใช้รูปแบบ 24 ชั่วโมง [cite: 12]
+            timeZone: 'UTC' // บังคับ Timezone เป็น UTC อย่างเคร่งครัด
         });
 
-        return `${datePart} ${timePart} น.`;
+        return `${formatter.format(date)} (UTC)`;
     }
 
     function handleSortColumn(column: string) {

@@ -337,6 +337,61 @@
             Swal.fire('ข้อผิดพลาด', 'ไม่พบข้อมูลไฟล์อ้างอิง', 'error'); 
             return; 
         }
+
+        // 1. ตรวจสอบข้อมูลภาษาอังกฤษ (บังคับทุกกรณี)
+        const isEngMissingText = ocrDataEnglish.title.trim() === '' || ocrDataEnglish.abstract.trim() === '' || ocrDataEnglish.academicYear.trim() === '';
+        
+        const isEngAuthorMissing = ocrDataEnglish.authors.length === 0 || ocrDataEnglish.authors.some(a => a.name.trim() === '' || !a.studentId || a.studentId.trim() === '');
+        
+        const isEngKeywordMissing = pairedKeywords.length === 0 || 
+                                    pairedKeywords.some(kw => kw.en.trim() === '');
+
+        if (isEngMissingText || isEngAuthorMissing || isEngKeywordMissing) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลภาษาอังกฤษ (ชื่อ, บทคัดย่อ, ปีการศึกษา, ผู้จัดทำพร้อมรหัส, คำสำคัญ) ให้ครบถ้วน', 'error');
+            return;
+        }
+
+        // 2. ตรวจสอบ Master Data (ต้องมีข้อมูล)
+        if (!selectedDegreeId || !selectedFacultyId || !selectedDepartmentId) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกหลักสูตร คณะ และภาควิชาให้ครบถ้วน', 'error');
+            return;
+        }
+
+        // 3. ตรวจสอบ Master Data (ความสอดคล้องกัน)
+        const isFacultyValid = availableFaculties.some(f => f?.faculty?.faculty_id === selectedFacultyId);
+        const isDepartmentValid = availableDepartments.some((d : any) => d.department_id === selectedDepartmentId);
+        
+        if (!isFacultyValid || !isDepartmentValid) {
+            Swal.fire('ข้อผิดพลาด', 'หลักสูตร คณะ หรือภาควิชาที่เลือกไม่สอดคล้องกัน กรุณาเลือกใหม่', 'error');
+            return;
+        }
+
+        // 4. ตรวจสอบ Advisor (ต้องมีข้อมูล)
+        if (selectedAdvisors.length === 0 || selectedAdvisors.some(adv => !adv.advisor_id)) {
+            Swal.fire('ข้อผิดพลาด', 'กรุณาเลือกอาจารย์ที่ปรึกษา', 'error');
+            return;
+        }
+
+        // 5. ตรวจสอบเงื่อนไขข้อมูลภาษาไทย (บังคับครบ ถ้ามีการกรอกมาบางส่วน)
+        const hasSomeThaiData = 
+            ocrDataThai.title.trim() !== '' || 
+            ocrDataThai.abstract.trim() !== '' || 
+            ocrDataThai.authors.some(a => a.name.trim() !== '' || (a.studentId && a.studentId.trim() !== '')) || 
+            pairedKeywords.some(kw => kw.th.trim() !== '');
+
+        if (hasSomeThaiData) {
+            const isThaiTitleIncomplete = ocrDataThai.title.trim() === '';
+            const isThaiAbstractIncomplete = ocrDataThai.abstract.trim() === '';
+            const isThaiAuthorIncomplete = ocrDataThai.authors.length === 0 || ocrDataThai.authors.some(a => a.name.trim() === '' || !a.studentId || a.studentId.trim() === '');
+            const isThaiKeywordIncomplete = pairedKeywords.length === 0 || 
+                                            pairedKeywords.some(kw => kw.th.trim() === '');
+
+            if (isThaiTitleIncomplete || isThaiAbstractIncomplete || isThaiAuthorIncomplete || isThaiKeywordIncomplete) {
+                Swal.fire('ข้อผิดพลาด', 'คุณมีการระบุข้อมูลภาษาไทย กรุณากรอกข้อมูลภาษาไทยที่จำเป็น (ชื่อ, บทคัดย่อ, ผู้จัดทำพร้อมรหัส, คำสำคัญ) ให้ครบถ้วน', 'error');
+                return;
+            }
+        }
+
         isSaving = true;
         try {
             const response = await fetch(`${PUBLIC_API_URL}/project/save`, {
