@@ -225,17 +225,20 @@
                 selectedAdvisors = [{ advisor_id: '' }];
             }
 
-            ocrDataThai = {
-                title:        form.title_th                  ?? '',
-                faculty:      form.faculty?.faculty_name_th  ?? '',
-                department:   form.department?.department_name_th ?? '',
-                degree:       form.degree?.degree_name_th    ?? '',
-                academicYear: form.academic_year_be          ?? '',
-                authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_th    ?? '', studentId: s.student_id ?? '' })),
-                advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_th ?? '' })),
-                abstract: form.abstract_th ?? '',
-                keywords: (form.keywords ?? []).map((k: any) => k.th ?? ''),
-            };
+            if (form.title_th) {
+                ocrDataThai = {
+                    title:        form.title_th                  ?? '',
+                    faculty:      form.faculty?.faculty_name_th  ?? '',
+                    department:   form.department?.department_name_th ?? '',
+                    degree:       form.degree?.degree_name_th    ?? '',
+                    academicYear: form.academic_year_be          ?? '',
+                    authors:  (form.students ?? []).map((s: any) => ({ name: s.student_name_th    ?? '', studentId: s.student_id ?? '' })),
+                    advisors: (form.advisors ?? []).map((a: any) => ({ name: a.advisor_name_th ?? '' })),
+                    abstract: form.abstract_th ?? '',
+                    keywords: (form.keywords ?? []).map((k: any) => k.th ?? ''),
+                };
+            }
+            
 
             ocrDataEnglish = {
                 title:        form.title_en                  ?? '',
@@ -377,8 +380,7 @@
         const hasSomeThaiData = 
             ocrDataThai.title.trim() !== '' || 
             ocrDataThai.abstract.trim() !== '' || 
-            ocrDataThai.authors.some(a => a.name.trim() !== '' || (a.studentId && a.studentId.trim() !== '')) || 
-            pairedKeywords.some(kw => kw.th.trim() !== '');
+            ocrDataThai.authors.some(a => a.name.trim() !== '' || (a.studentId && a.studentId.trim() !== ''));
 
         if (hasSomeThaiData) {
             const isThaiTitleIncomplete = ocrDataThai.title.trim() === '';

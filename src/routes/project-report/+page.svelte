@@ -127,7 +127,7 @@
                 }
 
                 // เรียก API ไปที่ Endpoint /report ที่มีตัวล็อก RBAC
-                const response = await fetch(`${PUBLIC_API_URL}/project/report?${queryParams.toString()}`, {
+                const response = await fetch(`${PUBLIC_API_URL}/report/project?${queryParams.toString()}`, {
                     credentials: 'include'
                 });
 

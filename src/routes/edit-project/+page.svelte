@@ -208,7 +208,7 @@
             };
 
             // 3. ส่งข้อมูลไปอัปเดตที่ FastAPI
-            const res = await fetch(`${PUBLIC_API_URL}/project/save_update_project_data/${projectId}`, {
+            const res = await fetch(`${PUBLIC_API_URL}/project/update_project/${projectId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

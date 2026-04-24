@@ -88,7 +88,7 @@
                     queryParams.append('order', sortOrder);
                 }
 
-                const response = await fetch(`${PUBLIC_API_URL}/project/report/dictionary?${queryParams.toString()}`, {
+                const response = await fetch(`${PUBLIC_API_URL}/report/dictionary?${queryParams.toString()}`, {
                     credentials: 'include'
                 });
 
