@@ -274,6 +274,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-200">
                         {#each projects as item}
+                            {@const hasTh = !!item.project.title_th}
                             <tr 
                                 onclick={() => goto(`/project-detail?id=${item.project.project_id}`)}
                                 class="hover:bg-orange-50 cursor-pointer transition-colors"
@@ -285,11 +286,15 @@
                                 </td>
                                 <td class="py-4">
                                     {#each item.users as user}
-                                        <div class="text-sm text-gray-700">{user.user_name_th}</div>
+                                        <div class="text-sm text-gray-700">
+                                            {hasTh ? user.user_name_th  : user.user_name_en}
+                                        </div>
                                     {/each}
                                 </td>
                                 <td class="py-4">
-                                    <div class="font-semibold text-gray-700 line-clamp-2">{item.project.title_th}</div>
+                                    <div class="font-semibold text-gray-700 line-clamp-2">
+                                        {hasTh ? item.project.title_th : item.project.title_en}
+                                    </div>
                                     <div class="text-xs text-gray-700 mt-1 line-clamp-1">{item.department?.department_name_th}</div>
                                 </td>
                                 <td class="py-4 text-gray-700">{item.project.academic_year_be}</td>

@@ -58,6 +58,7 @@
     let projectData = $state<ProjectData | null>(null);
     let isLoading = $state(true);
     let isError = $state(false);
+    let hasThaiInfo = $state(true);
 
     const projectId = $derived(page.url.searchParams.get('id'));
 
@@ -81,6 +82,11 @@
                 if (!data) {
                     isError = true;
                     return;
+                }
+
+                hasThaiInfo = !!(data.title_th ?? data.project?.title_th);
+                if (!hasThaiInfo) {
+                    isEnglish = true;
                 }
 
                 projectData = {
@@ -193,22 +199,24 @@
             <div class="flex-1 space-y-8">
                 
                 <!-- ปุ่มสลับภาษาไทย/อังกฤษของรายละเอียด -->
-                <div class="flex justify-center lg:justify-start">
-                    <label class="relative inline-flex h-12 w-56 cursor-pointer items-center rounded-full bg-gray-100 p-1 shadow-inner border border-gray-500">
-                        <input type="checkbox" class="peer sr-only" bind:checked={isEnglish} />
-                        
-                        <div class="absolute left-1 top-1 h-10 w-[calc(50%-4px)] rounded-full bg-orange-500 transition-transform duration-300 peer-checked:translate-x-full shadow-md"></div>
-                        
-                        <div class="relative z-10 flex w-full font-bold">
-                            <span class="flex-1 text-center text-sm transition-colors duration-300 {isEnglish ? 'text-gray-500' : 'text-white'}">
-                                ภาษาไทย
-                            </span>
-                            <span class="flex-1 text-center text-sm transition-colors duration-300 {isEnglish ? 'text-white' : 'text-gray-500'}">
-                                English
-                            </span>
-                        </div>
-                    </label>
-                </div>
+                {#if hasThaiInfo}
+                    <div class="flex justify-center lg:justify-start">
+                        <label class="relative inline-flex h-12 w-56 cursor-pointer items-center rounded-full bg-gray-100 p-1 shadow-inner border border-gray-500">
+                            <input type="checkbox" class="peer sr-only" bind:checked={isEnglish} />
+                            
+                            <div class="absolute left-1 top-1 h-10 w-[calc(50%-4px)] rounded-full bg-orange-500 transition-transform duration-300 peer-checked:translate-x-full shadow-md"></div>
+                            
+                            <div class="relative z-10 flex w-full font-bold">
+                                <span class="flex-1 text-center text-sm transition-colors duration-300 {isEnglish ? 'text-gray-500' : 'text-white'}">
+                                    ภาษาไทย
+                                </span>
+                                <span class="flex-1 text-center text-sm transition-colors duration-300 {isEnglish ? 'text-white' : 'text-gray-500'}">
+                                    English
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                {/if}
 
                 <!-- เนื้อหาหลักของรายละเอียดแต่ละหัวข้อ -->
                 <div id="abstract" class="scroll-mt-24">

@@ -268,16 +268,17 @@
                         {:else}
                             <!-- วนแสดงรายการเล่มปัญหาพิเศษที่ค้นเจอ -->
                             {#each projects as item (item.project.project_id)}
+                                {@const hasTh = !!item.project.title_th}
                                 <CardProjectDetail 
                                     id={item.project.project_id}
                                     faculty={item.faculty?.faculty_name_th || "-"}
                                     department={item.department?.department_name_th || "-"}
-                                    author={item.users?.map((u: any) => u.user_name_th)}
+                                    author={item.users?.map((u: any) => hasTh ? (u.user_name_th || u.user_name_en) : (u.user_name_en || u.user_name_th))}
                                     advisor={item.advisors?.map((a: any) => a.advisor_name_th)}
                                     semester={item.project.academic_year_be}
-                                    titleThai={item.project.title_th}
-                                    titleEnglish={item.project.title_en}
-                                    keywords={item.keywords?.map((k: any) => k.keyword_text_th)}
+                                    titleThai={hasTh ? item.project.title_th : item.project.title_en}
+                                    titleEnglish={hasTh ? item.project.title_en : null} 
+                                    keywords={item.keywords?.map((k: any) => hasTh ? (k.keyword_text_th || k.keyword_text_en) : (k.keyword_text_en || k.keyword_text_th))}
                                     thumbnail={item.project_file?.thumbnail_path || null}
                                     downloadCount={item.project.downloaded_count}
                                 />

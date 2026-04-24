@@ -73,8 +73,10 @@
 
             <div class="flex flex-col gap-4 w-full text-black">
                 <div>
-                    <p class="text-xs md:text-sm text-gray-300 mb-1">ชื่อเรื่องภาษาไทย</p>
-                    <h1 class="text-xl md:text-2xl lg:text-3xl font-bold mb-4 leading-tight">{project.titleTH}</h1>
+                    {#if project.titleTH}
+                        <p class="text-xs md:text-sm text-gray-300 mb-1">ชื่อเรื่องภาษาไทย</p>
+                        <h1 class="text-xl md:text-2xl lg:text-3xl font-bold mb-4 leading-tight">{project.titleTH}</h1>
+                    {/if}
                     <p class="text-xs md:text-sm text-gray-300 mb-1">ชื่อเรื่องภาษาอังกฤษ</p>
                     <h2 class="text-lg md:text-xl font-semibold leading-tight ">{project.titleEN}</h2>
                 </div>

@@ -61,19 +61,23 @@
 							const responseData = await projectRes.json();
 							const data = responseData.data || [];
 
-							userProjects = data.map((item: any) => ({
-								projectId: item.project?.project_id,
-								titleThai: item.project?.title_th ?? '-',
-								titleEnglish: item.project?.title_en ?? '-',
-								facultyName: item.faculty?.faculty_name_th ?? "-",
-								departmentName: item.department?.department_name_th ?? "-",
-								authors: item.users?.map((u: any) => u.user_name_th) ?? [],
-								advisors: item.advisors?.map((a: any) => a.advisor_name_th) ?? [],
-								academicYear: item.project?.academic_year_be ?? '-',
-								keywords: item.keywords?.map((k: any) => k.keyword_text_th) ?? [],
-								thumbnail: item.project_file?.thumbnail_path ?? null,
-								downloadCount: item.project?.downloaded_count ?? 0
-							}));
+							userProjects = data.map((item: any) => {
+								const hasTh = !!item.project?.title_th;
+
+								return {
+									projectId: item.project?.project_id,
+									titleThai: hasTh ? item.project.title_th : item.project?.title_en,
+									titleEnglish: hasTh ? item.project.title_en : null,
+									facultyName: item.faculty?.faculty_name_th ?? "-",
+									departmentName: item.department?.department_name_th ?? "-",
+									authors: item.users?.map((u: any) => hasTh ? (u.user_name_th || u.user_name_en) : (u.user_name_en || u.user_name_th)),
+									advisors: item.advisors?.map((a: any) => a.advisor_name_th) ?? [],
+									academicYear: item.project?.academic_year_be ?? '-',
+									keywords: item.keywords?.map((k: any) => hasTh ? (k.keyword_text_th || k.keyword_text_en) : (k.keyword_text_en || k.keyword_text_th)),
+									thumbnail: item.project_file?.thumbnail_path ?? null,
+									downloadCount: item.project?.downloaded_count ?? 0
+								};
+							});
 						}
 					}
 				} else {
