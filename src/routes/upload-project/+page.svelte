@@ -190,8 +190,12 @@
                 fetch(`${PUBLIC_API_URL}/master/degree`),
                 fetch(`${PUBLIC_API_URL}/master/advisor`)
             ]);
-            const errorData = await ocrRes.json();
-            if (!ocrRes.ok) throw new Error(errorData.message || errorData.error || 'Server error: ' + ocrRes.status);
+            
+            if (!ocrRes.ok) {
+                const errorData = await ocrRes.json();
+                
+                throw new Error(errorData.message || errorData.error || `เกิดข้อผิดพลาด: ${ocrRes.status}`);
+            }
 
             const data  = await ocrRes.json();
             masterFaculties = await facRes.json();
@@ -258,12 +262,16 @@
 
         } catch (error) {
             console.error('OCR Error:', error);
+            
             const errorMessage = error instanceof Error 
                 ? error.message 
-                : 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+                : 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุในการประมวลผล OCR';
 
-            // นำ errorMessage ไปแสดงผล
-            Swal.fire('ข้อผิดพลาด', errorMessage, 'error');
+            Swal.fire({
+                title: 'ไม่สามารถอัปโหลดได้',
+                text: errorMessage,
+                icon: 'error',
+            });
             currentStep = 2;
         } finally {
             isLoadingOcr = false;
