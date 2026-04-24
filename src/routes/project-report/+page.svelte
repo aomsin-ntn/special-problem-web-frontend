@@ -3,6 +3,7 @@
     import { goto } from '$app/navigation';
     import { PUBLIC_API_URL } from '$env/static/public';
     import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-svelte';
+    import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
 
     let faculties = $state<any[]>([]);
     let projects = $state<any[]>([]);
@@ -173,32 +174,33 @@
                 
                 <div class="flex flex-col">
                     <label for="year-filter" class="text-sm font-semibold text-gray-700 mb-1">ปีการศึกษา</label>
-                    <select id="year-filter" bind:value={selectedYear} class="select select-bordered w-full bg-white border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-700">
-                        <option value="">ทั้งหมด</option>
-                        {#each recentYears as year}
-                            <option value={year}>{year}</option>
-                        {/each}
-                    </select>
+                    <SearchableDropdown 
+                        bind:value={selectedYear} 
+                        placeholder="ปี..." defaultOptionText="ทั้งหมด" valueKey="id"
+                        options={recentYears.map(y => ({ id: y, label: y }))}
+                    />
                 </div>
 
                 <div class="flex flex-col">
                     <label for="faculty-filter" class="text-sm font-semibold text-gray-700 mb-1">คณะ</label>
-                    <select id="faculty-filter" bind:value={selectedFaculty} onchange={() => selectedDepartment = ''} class="select select-bordered w-full bg-white border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-700">
-                        <option value="">ทั้งหมด</option>
-                        {#each faculties as fac}
-                            <option value={fac.id}>{fac.label}</option>
-                        {/each}
-                    </select>
+                    <SearchableDropdown 
+                        bind:value={selectedFaculty} 
+                        onchange={() => selectedDepartment = ''}
+                        placeholder="ค้นหาคณะ..." 
+                        defaultOptionText="ทั้งหมด" 
+                        valueKey="id"
+                        options={faculties}
+                    />
                 </div>
 
                 <div class="flex flex-col">
-                    <label for="department-filter" class="text-sm font-semibold text-gray-700 mb-1">สาขาวิชา</label>
-                    <select id="department-filter" bind:value={selectedDepartment} disabled={!selectedFaculty} class="select select-bordered w-full bg-white border-gray-300 focus:border-orange-500 focus:ring-orange-500 text-gray-700 disabled:bg-gray-500">
-                        <option value="">ทั้งหมด</option>
-                        {#each availableDepartments() as dept}
-                            <option value={dept.id}>{dept.label}</option>
-                        {/each}
-                    </select>
+                    <label for="department-filter" class="text-sm font-semibold text-gray-700 mb-1">ภาควิชา</label>
+                    <SearchableDropdown 
+                        bind:value={selectedDepartment} 
+                        disabled={!selectedFaculty}
+                        placeholder="ค้นหาภาควิชา..." defaultOptionText="ทั้งหมด" valueKey="id"
+                        options={availableDepartments()}
+                    />
                 </div>
             </div>
         </div>

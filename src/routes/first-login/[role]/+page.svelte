@@ -4,6 +4,7 @@
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import { onMount } from 'svelte';
 	import { checkAuth } from '$lib/stores/authStore';
+	import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
 	import Swal from 'sweetalert2';
 	
 	// ดึง Role จาก Dynamic Route (/first-login/student หรือ /staff)
@@ -145,17 +146,13 @@
 					{#if role === 'student'}
 						<div class="space-y-1">
 							<label for="degree" class="text-sm font-bold text-gray-700">ระดับปริญญา</label>
-							<select 
-								id="degree" 
+							<SearchableDropdown 
 								bind:value={formData.degree_id} 
-								required 
-								class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm text-gray-700 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-white"
-							>
-								<option value="" disabled selected>กรุณาเลือกระดับปริญญา</option>
-								{#each degrees as degree}
-									<option value={degree.degree_id}>{degree.degree_name_th}</option>
-								{/each}
-							</select>
+								placeholder="-- ค้นหาหลักสูตร --"
+								defaultOptionText="-- เลือกหลักสูตร --"
+								valueKey="id"
+								options={degrees.map(d => ({ id: d.degree_id, label: d.degree_name_th }))}
+							/>
 						</div>
 					{/if}
 
