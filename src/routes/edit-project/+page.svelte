@@ -201,12 +201,14 @@
                     student_name_en: author.user_name_en || ""
                 })) : [],
                 file_info: {
+                    file_id: project.project_file?.file_id || "",
                     file_path: project.project_file?.file_path || "",
                     save_name: project.project_file?.file_name || "",
-                    thumbnail_path: project.project_file?.thumbnail_path || ""
+                    thumbnail_path: project.project_file?.thumbnail_path || "",
+                    file_hash: project.project_file?.file_hash || ""
                 }
             };
-
+            console.log("Payload for Update:", payload);
             // 3. ส่งข้อมูลไปอัปเดตที่ FastAPI
             const res = await fetch(`${PUBLIC_API_URL}/project/update_project/${projectId}`, {
                 method: 'POST',
