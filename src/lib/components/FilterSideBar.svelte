@@ -90,7 +90,7 @@
                 type="button" 
                 onclick={() => toggleSection('facultyDepartment')} 
                 class="flex justify-between items-center w-full text-left font-semibold text-black mb-2 hover:opacity-70 transition-opacity bg-transparent border-none cursor-pointer">
-                <span>คณะ - สาขาวิชา</span>
+                <span>คณะ - ภาควิชา</span>
                 {@render toggleIcon(openSections.facultyDepartment)}
             </button>
 
@@ -113,7 +113,7 @@
                                     <div class="flex flex-col gap-1 pl-6 mt-1 mb-2">
                                         <label class="flex items-center gap-2 py-1 cursor-pointer group">
                                             <input type="checkbox" checked={isAllDepartmentsSelected(faculty)} indeterminate={isSomeDepartmentsSelected(faculty)} onchange={(e) => toggleAllDepartments(faculty, e.currentTarget.checked)} class="w-4 h-4 rounded border-gray-300 accent-black cursor-pointer" />
-                                            <span class="text-gray-700 text-sm font-medium group-hover:text-black transition-colors">สาขาทั้งหมด</span>
+                                            <span class="text-gray-700 text-sm font-medium group-hover:text-black transition-colors">ภาควิชาทั้งหมด</span>
                                         </label>
                                         {#each faculty.departments as department}
                                             <label class="flex items-center gap-2 py-1 cursor-pointer group">
