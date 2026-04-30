@@ -404,13 +404,13 @@
         <div class="spell-header">แก้คำสะกดผิด</div>
 
         <!-- ── Suggestions ── -->
-        {#each tooltip.suggestions as suggestion (suggestion)}
+        {#each tooltip.suggestions as suggestion, index (index)}
             <button
                 type="button"
                 class="spell-suggestion"
                 onclick={() => applySuggestion(suggestion)}
             >
-                {suggestion}
+                {suggestion === '' ? '(นำออก)' : suggestion}
             </button>
         {/each}
 
