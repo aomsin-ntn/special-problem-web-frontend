@@ -131,6 +131,7 @@
                 const response = await fetch(`${PUBLIC_API_URL}/report/projects?${queryParams.toString()}`, {
                     credentials: 'include'
                 });
+                console.log('API Response:', response);
 
                 if (response.status === 403 || response.status === 401) {
                     errorMessage = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะเจ้าหน้าที่และอาจารย์)";
