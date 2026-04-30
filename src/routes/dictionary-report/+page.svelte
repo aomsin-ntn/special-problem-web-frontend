@@ -1,7 +1,9 @@
 <script lang="ts">
     import { onMount, untrack } from 'svelte';
     import { PUBLIC_API_URL } from '$env/static/public';
+    import { goto } from '$app/navigation';
     import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-svelte';
+    import Swal from 'sweetalert2';
 
     let activeTab = $state<string>('incorrect'); // ค่าเริ่มต้นคือแท็บ Incorrect
     let dictData = $state<any[]>([]);
@@ -95,6 +97,10 @@
                 if (response.status === 403 || response.status === 401) {
                     errorMessage = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะเจ้าหน้าที่และอาจารย์)";
                     dictData = [];
+                    return;
+                } else if (response.status === 401) {
+                    Swal.fire('ปฏิเสธการเข้าถึง', 'กรุณาเข้าสู่ระบบเพื่อเข้าถึงหน้านี้', 'error');
+                    goto('/login');
                     return;
                 }
 

@@ -4,6 +4,7 @@
     import { PUBLIC_API_URL } from '$env/static/public';
     import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-svelte';
     import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
+    import Swal from 'sweetalert2';
 
     let faculties = $state<any[]>([]);
     let projects = $state<any[]>([]);
@@ -135,6 +136,10 @@
                 if (response.status === 403 || response.status === 401) {
                     errorMessage = "คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (เฉพาะเจ้าหน้าที่และอาจารย์)";
                     projects = [];
+                    return;
+                } else if (response.status === 401) {
+                    Swal.fire('ปฏิเสธการเข้าถึง', 'กรุณาเข้าสู่ระบบเพื่อเข้าถึงหน้านี้', 'error');
+                    goto('/login');
                     return;
                 }
 

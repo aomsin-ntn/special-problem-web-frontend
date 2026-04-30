@@ -16,7 +16,7 @@
     import SearchableDropdown from '$lib/components/SearchableDropdown.svelte';
     import Swal from 'sweetalert2';
 
-    let isAccessDenied = $derived($authStore.user && $authStore.user.role !== 'student');
+    let isAccessDenied = $derived(($authStore.user && $authStore.user.role !== 'student') || !$authStore.user);
 
     // ─── Step state ───────────────────────────────────────────────────────────
     let currentStep = $state(1);
