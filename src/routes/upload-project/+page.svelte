@@ -356,6 +356,15 @@
             return; 
         }
 
+        const getBackendErrorMessage = async (response: Response, fallback: string) => {
+            try {
+                const errorData = await response.json();
+                return errorData?.detail || errorData?.error || errorData?.message || fallback;
+            } catch {
+                return fallback;
+            }
+        };
+
         // 1. ตรวจสอบข้อมูลภาษาอังกฤษ (บังคับทุกกรณี)
         const isEngMissingText = ocrDataEnglish.title.trim() === '' || ocrDataEnglish.abstract.trim() === '' || ocrDataEnglish.academicYear.trim() === '';
         
@@ -417,7 +426,10 @@
                 body:        JSON.stringify(buildPayload()),
                 credentials: 'include',
             });
-            if (!response.ok) throw new Error('Failed to save: ' + response.status);
+            if (!response.ok) {
+                const message = await getBackendErrorMessage(response, `Failed to save: ${response.status}`);
+                throw new Error(message);
+            }
 
             Swal.fire({
                     title: 'บันทึกสำเร็จ!',
@@ -433,7 +445,11 @@
             await goto('/profile');
         } catch (error) {
             console.error('Save Error:', error);
-            Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', 'error');
+            Swal.fire(
+                'ข้อผิดพลาด',
+                error instanceof Error ? error.message : 'เกิดข้อผิดพลาดในการบันทึกข้อมูล',
+                'error'
+            );
         } finally {
             isSaving = false;
         }
