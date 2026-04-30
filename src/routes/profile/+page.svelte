@@ -2,7 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { Mail } from 'lucide-svelte';
 	import { PUBLIC_API_URL } from '$env/static/public';
+	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/authStore';
+	import { checkAuth } from '$lib/stores/authStore';
 	import CardProjectDetail from '$lib/components/CardProjectDetail.svelte';
 	import ProfileInfo from '$lib/components/ProfileInfo.svelte';
 	
@@ -32,6 +34,18 @@
 	let profileData = $state<StudentProfile | null>(null);
 	let userProjects = $state<UserProject[]>([]);
 	let isLoading = $state(true);
+
+	onMount(async () => {
+		// If we don't have auth information yet, attempt to fetch it.
+		if (!$authStore.user) {
+			await checkAuth();
+		}
+
+		// If still not authenticated, redirect to login
+		if (!$authStore.user) {
+			goto('/login');
+		}
+	});
 
 	$effect(() => {
 
