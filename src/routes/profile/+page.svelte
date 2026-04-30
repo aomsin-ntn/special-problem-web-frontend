@@ -80,8 +80,6 @@
 							});
 						}
 					}
-				} else {
-					goto('/login');
 				}
 			} catch (error) {
 				console.error('Error fetching profile data:', error);
@@ -139,12 +137,14 @@
 				<!-- ส่วนแสดงโปรเจกต์ของผู้ใช้ -->
 				<div class="flex items-center justify-between border-b border-gray-400 pb-4 md:pb-6 mb-6 md:mb-8">
 					<p class="text-xl md:text-2xl lg:text-3xl font-semibold">My Project</p>
-					<button 
-						onclick={handleUpload}
-						class="btn btn-sm md:btn-md bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full px-6 md:px-8 shadow-sm border-none cursor-pointer transition-transform active:scale-95"
-					>
-						Upload
-					</button>
+					{#if userProjects.length === 0}
+						<button 
+							onclick={handleUpload}
+							class="btn btn-sm md:btn-md bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-full px-6 md:px-8 shadow-sm border-none cursor-pointer transition-transform active:scale-95"
+						>
+							Upload
+						</button>
+					{/if}
 				</div>
 
 				{#if isLoading}

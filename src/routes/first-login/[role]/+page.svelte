@@ -8,7 +8,7 @@
 	import Swal from 'sweetalert2';
 	
 	// ดึง Role จาก Dynamic Route (/first-login/student หรือ /staff)
-	let role = $derived($page.params.role); 
+	let role = $derived($page.params.role || ''); 
 	// ดึง Token จาก URL Query Parameter (?token=...)
 	let token = $derived($page.url.searchParams.get('token'));
 
@@ -26,9 +26,10 @@
 	let degrees = $state<any[]>([]);
 
 	onMount(async () => {
+
 		if (!token) {
-			alert('ไม่พบ Token สำหรับการลงทะเบียน');
-			goto('/');
+			Swal.fire('ปฏิเสธการเข้าถึง', 'ไม่พบ Token สำหรับการลงทะเบียน', 'error');
+			goto('/login');
 			return;
 		}
 
@@ -37,6 +38,14 @@
 			const userRes = await fetch(`${PUBLIC_API_URL}/auth/first-login/me?token=${token}`);
 			if (!userRes.ok) throw new Error('Token ไม่ถูกต้องหรือหมดอายุ');
 			const userData = await userRes.json();
+			const requestedRole = role.toLowerCase();
+			const actualRole = String(userData.role || '').toLowerCase();
+
+			if (actualRole !== requestedRole) {
+				Swal.fire('ปฏิเสธการเข้าถึง', 'คุณไม่มีสิทธิ์เข้าถึงหน้านี้', 'error');
+				goto('/login');
+				return;
+			}
 			
 			formData.user_name_th = userData.user_name_th || '';
 			formData.user_name_en = userData.user_name_en || '';
@@ -44,7 +53,7 @@
 			formData.degree_id = userData.degree_id || '';
 
 			// 2. โหลดข้อมูล Degree เฉพาะกรณีที่เป็น Student
-			if (role === 'student' || userData.role === 'STUDENT') {
+			if (actualRole === 'student') {
 				const degRes = await fetch(`${PUBLIC_API_URL}/master/degree`);
 				if (degRes.ok) {
 					degrees = await degRes.json();
