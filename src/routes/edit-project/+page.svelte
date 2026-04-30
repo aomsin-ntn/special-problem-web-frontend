@@ -204,8 +204,7 @@
                     file_id: project.project_file?.file_id || "",
                     file_path: project.project_file?.file_path || "",
                     save_name: project.project_file?.file_name || "",
-                    thumbnail_path: project.project_file?.thumbnail_path || "",
-                    file_hash: project.project_file?.file_hash || ""
+                    thumbnail_path: project.project_file?.thumbnail_path || ""
                 }
             };
             console.log("Payload for Update:", payload);
